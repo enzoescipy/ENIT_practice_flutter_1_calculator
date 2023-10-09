@@ -1,4 +1,5 @@
 import 'dart:ffi';
+import 'dart:developer';
 
 import 'package:calculator/library/math_expression.dart';
 
@@ -6,6 +7,16 @@ enum ExpFault { invalid, abnormal }
 
 class CalcManager {
   String _expression = "";
+  void _setExpression(String exp) {
+    _expression = exp;
+    if (onExpressionChanged != null) {
+      onExpressionChanged!(exp);
+    }
+  }
+
+  // this function will be called after the expression changed.
+  void Function(String)? onExpressionChanged;
+
   int? _cursor = null;
 
   double? _result =
@@ -14,17 +25,24 @@ class CalcManager {
 
   ExpFault _abnormalCase = ExpFault.invalid;
 
+  // this function will be called after some adds applied for the expression.
+  void Function()? onAdd;
+
+  // this function will be called after some deletes applied for the expression.
+  void Function()? onDelete;
+
   CalcManager() {}
 
   /// debug function. delete this when production!!
   void debug() {
-    _expression = "12 + 34 + (5.6*7.8)/9";
+    _setExpression("12+34+(5.6*7.8)/9");
+    _calculate();
   }
 
   /// get expression from the manager.
   String getExpression() {
     var showableExp = _expression.replaceAll("/", "÷");
-    return _expression;
+    return showableExp;
   }
 
   /// get the result from the manager.
@@ -97,9 +115,12 @@ class CalcManager {
       return;
     }
     int cursor = _cursor!;
-    _expression = _expression.substring(0, _cursor) +
+    _setExpression(_expression.substring(0, cursor) +
         numberChar +
-        _expression.substring(cursor);
+        _expression.substring(cursor));
+    if (onAdd != null) {
+      onAdd!();
+    }
     _calculate();
   }
 
@@ -176,19 +197,22 @@ class CalcManager {
 
   /// delete the all of the expression
   void initializeExpression() {
-    _expression = "";
+    _setExpression("");
     _result = null;
     _abnormalCase = ExpFault.invalid;
   }
 
   /// delete the one char from the expression.
   void deleteCharExpression() {
-    if (_cursor == null) {
+    if (_cursor == null || _cursor! < 1) {
       return;
     }
     int cursor = _cursor!;
-    _expression =
-        _expression.substring(0, cursor - 1) + _expression.substring(cursor);
+    _setExpression(
+        _expression.substring(0, cursor - 1) + _expression.substring(cursor));
+    if (onDelete != null) {
+      onDelete!();
+    }
     _calculate();
   }
 
@@ -201,7 +225,6 @@ class CalcManager {
     if (_result == null) {
       return;
     }
-
-    _expression = _result.toString();
+    _setExpression(_result.toString());
   }
 }

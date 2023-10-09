@@ -1,7 +1,6 @@
 import 'dart:developer';
 import '../library/list_stringify.dart';
 
-
 /// evaluate expression then return the result with status integer.
 /// however, this function bellieves that this expression's structure is valid.
 /// Return
@@ -41,8 +40,6 @@ List evaluateExpression(String exp) {
 bool validateExpression(String exp) {
   return BracketExpressionTree.validateExpression(exp);
 }
-
-
 
 class BracketExpressionTree {
   // if expression has consecutive operators or not having the target number,
@@ -138,10 +135,27 @@ class BracketExpressionTree {
   /// - false : invalid
   /// - true : valid
   static bool validateExpression(String exp) {
-    // validate if expression ONLY contains the whitelist characters.
+    // put the bracket to the expression, matching with BracketExpressionTree.parseExpression
+    exp = "(" + exp + ")";
+
+    // build the whitelists
     final whiteListNumbers = "1234567890";
     final whiteListStringOperators = "-+*/";
     final whitelist = whiteListStringOperators + whiteListNumbers + "." + "()";
+
+    // no number contains, return false.
+    bool isExpHasNumber = false;
+    for (int i = 0; i < whiteListNumbers.length; i++) {
+      var numchar = whiteListNumbers[i];
+      if (exp.contains(numchar)) {
+        isExpHasNumber = true;
+      }
+    }
+    if (isExpHasNumber == false) {
+      return false;
+    }
+    
+    // validate if expression ONLY contains the whitelist characters.
     for (int i = 0; i < exp.length; i++) {
       var targetChar = exp[i];
       if (!whitelist.contains(targetChar)) {
@@ -179,7 +193,7 @@ class BracketExpressionTree {
         // if operator's front and back are not the number or the prper bracket, it is not the operator.
         // if sign's front are not the number or the proper bracket, it is not the sign either.
         // so, return false.
-        if ((whiteListNumbers + "." + ")").contains(exp[i + 1]) == false) {
+        if ((whiteListNumbers + "." + "(").contains(exp[i + 1]) == false) {
           return false;
         }
       }
@@ -197,11 +211,9 @@ class BracketExpressionTree {
       } else if (i == exp.length - 1 &&
           !whiteListNumbers.contains(exp[i - 1])) {
         return false;
-      } else {
-        if (whiteListNumbers.contains(exp[i + 1]) ||
-            whiteListNumbers.contains(exp[i - 1]) == false) {
-          return false;
-        }
+      } else if (whiteListNumbers.contains(exp[i + 1]) == false &&
+          whiteListNumbers.contains(exp[i - 1]) == false) {
+        return false;
       }
     }
 
@@ -281,6 +293,7 @@ class BracketExpressionTree {
       }
     }
 
+    // pick up the lefted number
     if (literalDouble.length != 0 && evaluateChildren.length != 0 ||
         evaluateChildren.length > 1) {
       throw Exception(
@@ -288,7 +301,7 @@ class BracketExpressionTree {
     } else if (literalDouble.length != 0) {
       // and if literalDouble var is not empty, put it into the numberlist.
       numberList.add(double.parse(literalDouble));
-    } else {
+    } else if (evaluateChildren.length != 0) {
       numberList.add(evaluateChildren[0]);
     }
 
