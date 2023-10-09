@@ -3,11 +3,18 @@ import 'package:calculator/controller/calc_manager.dart';
 import 'package:calculator/library/math_expression.dart';
 import 'dart:developer';
 
-Widget FlexibleOutlinedButton({required void Function()? onPressed, required Widget child}) {
-  return Flexible(
-      child: OutlinedButton(
-    child: child,
-    onPressed: onPressed,
+Widget ExpandedOutlinedButton(
+    {required void Function()? onPressed,
+    required Widget child,
+    required Color color}) {
+  return Expanded(
+      child: Container(
+    color: color,
+    margin: EdgeInsets.all(5),
+    child: OutlinedButton(
+      child: child,
+      onPressed: onPressed,
+    ),
   ));
 }
 
@@ -34,6 +41,11 @@ class _MyHomePageState extends State<MyHomePage> {
   ScrollController resultScrollController = ScrollController();
 
   TextEditingController expressionTextController = TextEditingController();
+
+  // color collection
+  Color ACBracketColor = Color.fromARGB(106, 92, 163, 221);
+  Color numpadDeleteColor = Color.fromARGB(120, 110, 207, 131);
+  Color OperatorEqualColor = Color.fromARGB(108, 255, 226, 250);
 
   @override
   void initState() {
@@ -92,14 +104,15 @@ class _MyHomePageState extends State<MyHomePage> {
         body: Column(
           children: [
             Flexible(
-                child: partLCD(
-                    calcManager.getExpression(),
-                    calcManager.getResult(),
-                    expressionScrollController,
-                    resultScrollController,
-                    expressionTextController),
-                flex: 1),
-            Flexible(child: partButton()),
+              flex: 1,
+              child: partLCD(
+                  calcManager.getExpression(),
+                  calcManager.getResult(),
+                  expressionScrollController,
+                  resultScrollController,
+                  expressionTextController),
+            ),
+            Flexible(flex: 2, child: Container(child: partButton())),
           ],
         )
         // body: Column(
@@ -117,8 +130,8 @@ class _MyHomePageState extends State<MyHomePage> {
     return Column(
       children: [
         // the expression part
-        Flexible(
-          flex: 1,
+        Expanded(
+          flex: 3,
           child: Scrollbar(
             controller: expressionScrollController,
             child: TextField(
@@ -127,14 +140,14 @@ class _MyHomePageState extends State<MyHomePage> {
               maxLines: null,
               readOnly: true,
               showCursor: true,
-              style: TextStyle(fontSize: 20),
+              style: TextStyle(fontSize: 40),
               decoration: InputDecoration.collapsed(hintText: ""),
             ),
           ),
         ),
         // the result part
-        Flexible(
-            flex: 3,
+        Expanded(
+            flex: 1,
             child: Scrollbar(
               scrollbarOrientation: ScrollbarOrientation.bottom,
               controller: resultScrollController,
@@ -145,6 +158,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   // color: Colors.red,
                   child: SelectableText(
                     resultString,
+                    textAlign: TextAlign.right,
                     style: const TextStyle(fontSize: 20),
                     showCursor: true,
                   ),
@@ -157,134 +171,161 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget partButton() {
     var ACBracketRow = Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FlexibleOutlinedButton(
+        ExpandedOutlinedButton(
             onPressed: () => {
                   setState(() => {calcManager.initializeExpression()})
                 },
+            color: ACBracketColor,
             child: Text("AC")),
-        FlexibleOutlinedButton(
+        ExpandedOutlinedButton(
             onPressed: () => {
                   setState(() => {calcManager.addExpLeftBracket()})
                 },
+            color: ACBracketColor,
             child: Text("(")),
-        FlexibleOutlinedButton(
+        ExpandedOutlinedButton(
             onPressed: () => {
                   setState(() => {calcManager.addExpRightBracket()})
                 },
+            color: ACBracketColor,
             child: Text(")")),
       ],
     );
 
     var OperatorEqual = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FlexibleOutlinedButton(
+        ExpandedOutlinedButton(
             onPressed: () => {
                   setState(() => {calcManager.addExpDiv()})
                 },
+            color: OperatorEqualColor,
             child: Text("÷")),
-        FlexibleOutlinedButton(
+        ExpandedOutlinedButton(
             onPressed: () => {
                   setState(() => {calcManager.addExpMul()})
                 },
+            color: OperatorEqualColor,
             child: Text("×")),
-        FlexibleOutlinedButton(
+        ExpandedOutlinedButton(
             onPressed: () => {
                   setState(() => {calcManager.addExpMinus()})
                 },
+            color: OperatorEqualColor,
             child: Icon(Icons.remove)),
-        FlexibleOutlinedButton(
+        ExpandedOutlinedButton(
             onPressed: () => {
                   setState(() => {calcManager.addExpPlus()})
                 },
+            color: OperatorEqualColor,
             child: Icon(Icons.add)),
-        FlexibleOutlinedButton(
+        ExpandedOutlinedButton(
             onPressed: () => {
                   setState(() => {calcManager.expressionEquals()})
                 },
+            color: OperatorEqualColor,
             child: Text("=")),
       ],
     );
 
     var numpadDelete = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Flexible(
             child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            FlexibleOutlinedButton(
+            ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExp7()})
                     },
+                color: numpadDeleteColor,
                 child: Text("7")),
-            FlexibleOutlinedButton(
+            ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExp8()})
                     },
+                color: numpadDeleteColor,
                 child: Text("8")),
-            FlexibleOutlinedButton(
+            ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExp9()})
                     },
+                color: numpadDeleteColor,
                 child: Text("9")),
           ],
         )),
         Flexible(
             child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            FlexibleOutlinedButton(
+            ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExp4()})
                     },
+                color: numpadDeleteColor,
                 child: Text("4")),
-            FlexibleOutlinedButton(
+            ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExp5()})
                     },
+                color: numpadDeleteColor,
                 child: Text("5")),
-            FlexibleOutlinedButton(
+            ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExp6()})
                     },
+                color: numpadDeleteColor,
                 child: Text("6")),
           ],
         )),
         Flexible(
             child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            FlexibleOutlinedButton(
+            ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExp1()})
                     },
+                color: numpadDeleteColor,
                 child: Text("1")),
-            FlexibleOutlinedButton(
+            ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExp2()})
                     },
+                color: numpadDeleteColor,
                 child: Text("2")),
-            FlexibleOutlinedButton(
+            ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExp3()})
                     },
+                color: numpadDeleteColor,
                 child: Text("3")),
           ],
         )),
         Flexible(
             child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            FlexibleOutlinedButton(
+            ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExp0()})
                     },
+                color: numpadDeleteColor,
                 child: Text("0")),
-            FlexibleOutlinedButton(
+            ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExpDot()})
                     },
+                color: numpadDeleteColor,
                 child: Text(".")),
-            FlexibleOutlinedButton(
+            ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.deleteCharExpression()})
                     },
+                color: numpadDeleteColor,
                 child: Icon(Icons.backspace)),
           ],
         ))
@@ -292,17 +333,20 @@ class _MyHomePageState extends State<MyHomePage> {
     );
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Flexible(
+            flex: 3,
             child: Column(
-          children: [
-            Flexible(child: ACBracketRow),
-            Flexible(
-              child: numpadDelete,
-            )
-          ],
-        )),
-        Flexible(child: OperatorEqual)
+              children: [
+                Flexible(flex: 1, child: Container(child: ACBracketRow)),
+                Flexible(
+                  flex: 4,
+                  child: Container(child: numpadDelete),
+                )
+              ],
+            )),
+        Flexible(flex: 1, child: Container(child: OperatorEqual))
       ],
     );
   }
