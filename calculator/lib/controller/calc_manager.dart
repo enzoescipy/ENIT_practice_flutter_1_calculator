@@ -6,7 +6,7 @@ enum ExpFault { invalid, abnormal }
 
 class CalcManager {
   String _expression = "";
-  int _cursor = 0;
+  int? _cursor = null;
 
   double? _result =
       null; // if null, this means that the result is not the normal double value.
@@ -15,6 +15,26 @@ class CalcManager {
   ExpFault _abnormalCase = ExpFault.invalid;
 
   CalcManager() {}
+
+  /// debug function. delete this when production!!
+  void debug() {
+    _expression = "12 + 34 + (5.6*7.8)/9";
+  }
+
+  /// get expression from the manager.
+  String getExpression() {
+    var showableExp = _expression.replaceAll("/", "÷");
+    return _expression;
+  }
+
+  /// get the result from the manager.
+  String getResult() {
+    if (_result != null) {
+      return _result.toString();
+    } else {
+      return "";
+    }
+  }
 
   /// evaluate the current _expression, then fill the _result.
   /// also change the _abnormalCase if needed.
@@ -66,12 +86,20 @@ class CalcManager {
     }
   }
 
+  void disableCursor() {
+    _cursor = null;
+  }
+
   /// add 1 length char to the expression, then run the calculate
   /// running without validaiton of param
   void _addCharExpression(String numberChar) {
+    if (_cursor == null) {
+      return;
+    }
+    int cursor = _cursor!;
     _expression = _expression.substring(0, _cursor) +
         numberChar +
-        _expression.substring(_cursor);
+        _expression.substring(cursor);
     _calculate();
   }
 
@@ -112,6 +140,10 @@ class CalcManager {
     _addCharExpression("9");
   }
 
+  void addExp0() {
+    _addCharExpression("0");
+  }
+
   void addExpDot() {
     _addCharExpression(".");
   }
@@ -126,6 +158,22 @@ class CalcManager {
     _addCharExpression(")");
   }
 
+  void addExpMul() {
+    _addCharExpression("*");
+  }
+
+  void addExpDiv() {
+    _addCharExpression("/");
+  }
+
+  void addExpPlus() {
+    _addCharExpression("+");
+  }
+
+  void addExpMinus() {
+    _addCharExpression("-");
+  }
+
   /// delete the all of the expression
   void initializeExpression() {
     _expression = "";
@@ -135,8 +183,12 @@ class CalcManager {
 
   /// delete the one char from the expression.
   void deleteCharExpression() {
+    if (_cursor == null) {
+      return;
+    }
+    int cursor = _cursor!;
     _expression =
-        _expression.substring(0, _cursor - 1) + _expression.substring(_cursor);
+        _expression.substring(0, cursor - 1) + _expression.substring(cursor);
     _calculate();
   }
 
@@ -145,7 +197,7 @@ class CalcManager {
   /// if the expresion result is not the normal case, do nothing.
   ///
   /// reguard the _calculate() is called before.
-  void getResult() {
+  void expressionEquals() {
     if (_result == null) {
       return;
     }

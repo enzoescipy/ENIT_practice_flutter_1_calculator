@@ -19,19 +19,19 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  TextEditingController expressionTextController = TextEditingController();
-  TextEditingController resultTextController = TextEditingController();
+  CalcManager calcManager = CalcManager();
+
+  ScrollController expressionScrollController = ScrollController();
+  ScrollController resultScrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
-    // //debug
-    // var testTree = BracketExpressionTree();
-    // testTree.parseExpression("(1+3*(3+6)/(2)*7/(-0))");
-    // log(testTree.evaluate().toString());
-    // //debug
 
-    expressionTextController.text = "hello, expressionTextController!";
-    resultTextController.text = "hello, resultTextController!";
+    //debug
+    calcManager.debug();
+    //debug
+
   }
 
   @override
@@ -42,8 +42,15 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         body: Column(
           children: [
-            Expanded(
-                child: partLCD(expressionTextController, resultTextController))
+            Flexible(
+                child: partLCD(
+                    calcManager.getExpression(),
+                    calcManager.getResult(),
+                    expressionScrollController,
+                    resultScrollController
+                    ),
+                flex: 1),
+            Flexible(child: partButton()),
           ],
         )
         // body: Column(
@@ -51,26 +58,213 @@ class _MyHomePageState extends State<MyHomePage> {
         // ),
         );
   }
-}
 
-Widget partLCD(TextEditingController expressionTextController,
-    TextEditingController resultTextController) {
-  return Column(
-    children: [
-      // the expression part
-      Expanded(
-          flex: 3,
-          child: TextField(
-            controller: expressionTextController,
-            enabled: false,
-          )),
-      // the result part
-      Expanded(
-          flex: 1,
-          child: TextField(
-            controller: expressionTextController,
-            enabled: false,
-          )),
-    ],
-  );
+  Widget partLCD(
+      String expressionString,
+      String resultString,
+      ScrollController expressionScrollController,
+      ScrollController resultScrollController) {
+        
+    void selectionChangedThen(
+        TextSelection select, SelectionChangedCause? cause) {
+      if (select.baseOffset == select.extentOffset) {
+        calcManager.moveCursor(select.baseOffset);
+      } else {
+        calcManager.disableCursor();
+      }
+    }
+
+    return Column(
+      children: [
+        // the expression part
+        Flexible(
+            flex: 3,
+            child: Scrollbar(
+                controller: expressionScrollController,
+                child: SingleChildScrollView(
+                  controller: expressionScrollController,
+                  scrollDirection: Axis.vertical,
+                  child: Container(
+                      // color: Colors.green,
+                      child: SelectableText(
+                    expressionString,
+                    onSelectionChanged: selectionChangedThen,
+                    style: const TextStyle(fontSize: 20),
+                    showCursor: true,
+                  )),
+                ))),
+        // the result part
+        Flexible(
+            flex: 1,
+            child: Scrollbar(
+              scrollbarOrientation: ScrollbarOrientation.bottom,
+              controller: resultScrollController,
+              child: SingleChildScrollView(
+                controller: resultScrollController,
+                scrollDirection: Axis.horizontal,
+                child: Container(
+                  // color: Colors.red,
+                  child: SelectableText(
+                    resultString,
+                    style: const TextStyle(fontSize: 20),
+                    showCursor: true,
+                  ),
+                ),
+              ),
+            )),
+      ],
+    );
+  }
+
+  Widget partButton() {
+    var ACBracketRow = Row(
+      children: [
+        OutlinedButton(
+            onPressed: () => {
+                  setState(() => {calcManager.initializeExpression()})
+                },
+            child: Text("AC")),
+        OutlinedButton(
+            onPressed: () => {
+                  setState(() => {calcManager.addExpLeftBracket()})
+                },
+            child: Text("(")),
+        OutlinedButton(
+            onPressed: () => {
+                  setState(() => {calcManager.addExpRightBracket()})
+                },
+            child: Text(")")),
+      ],
+    );
+
+    var OperatorEqual = Column(
+      children: [
+        OutlinedButton(
+            onPressed: () => {
+                  setState(() => {calcManager.addExpDiv()})
+                },
+            child: Text("÷")),
+        OutlinedButton(
+            onPressed: () => {
+                  setState(() => {calcManager.addExpMul()})
+                },
+            child: Text("×")),
+        OutlinedButton(
+            onPressed: () => {
+                  setState(() => {calcManager.addExpMinus()})
+                },
+            child: Icon(Icons.remove)),
+        OutlinedButton(
+            onPressed: () => {
+                  setState(() => {calcManager.addExpPlus()})
+                },
+            child: Icon(Icons.add)),
+        OutlinedButton(
+            onPressed: () => {
+                  setState(() => {calcManager.expressionEquals()})
+                },
+            child: Text("=")),
+      ],
+    );
+
+    var numpadDelete = Column(
+      children: [
+        Flexible(
+            child: Row(
+          children: [
+            OutlinedButton(
+                onPressed: () => {
+                      setState(() => {calcManager.addExp7()})
+                    },
+                child: Text("7")),
+            OutlinedButton(
+                onPressed: () => {
+                      setState(() => {calcManager.addExp8()})
+                    },
+                child: Text("8")),
+            OutlinedButton(
+                onPressed: () => {
+                      setState(() => {calcManager.addExp9()})
+                    },
+                child: Text("9")),
+          ],
+        )),
+        Flexible(
+            child: Row(
+          children: [
+            OutlinedButton(
+                onPressed: () => {
+                      setState(() => {calcManager.addExp4()})
+                    },
+                child: Text("4")),
+            OutlinedButton(
+                onPressed: () => {
+                      setState(() => {calcManager.addExp5()})
+                    },
+                child: Text("5")),
+            OutlinedButton(
+                onPressed: () => {
+                      setState(() => {calcManager.addExp6()})
+                    },
+                child: Text("6")),
+          ],
+        )),
+        Flexible(
+            child: Row(
+          children: [
+            OutlinedButton(
+                onPressed: () => {
+                      setState(() => {calcManager.addExp1()})
+                    },
+                child: Text("1")),
+            OutlinedButton(
+                onPressed: () => {
+                      setState(() => {calcManager.addExp2()})
+                    },
+                child: Text("2")),
+            OutlinedButton(
+                onPressed: () => {
+                      setState(() => {calcManager.addExp3()})
+                    },
+                child: Text("3")),
+          ],
+        )),
+        Flexible(
+            child: Row(
+          children: [
+            OutlinedButton(
+                onPressed: () => {
+                      setState(() => {calcManager.addExp0()})
+                    },
+                child: Text("0")),
+            OutlinedButton(
+                onPressed: () => {
+                      setState(() => {calcManager.addExpDot()})
+                    },
+                child: Text(".")),
+            OutlinedButton(
+                onPressed: () => {
+                      setState(() => {calcManager.deleteCharExpression()})
+                    },
+                child: Icon(Icons.backspace)),
+          ],
+        ))
+      ],
+    );
+
+    return Row(
+      children: [
+        Flexible(
+            child: Column(
+          children: [
+            Flexible(child: ACBracketRow),
+            Flexible(
+              child: numpadDelete,
+            )
+          ],
+        )),
+        Flexible(child: OperatorEqual)
+      ],
+    );
+  }
 }
