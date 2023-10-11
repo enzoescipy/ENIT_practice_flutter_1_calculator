@@ -1,4 +1,6 @@
 import 'dart:developer';
+import 'package:flutter/material.dart';
+
 import '../library/list_stringify.dart';
 
 enum Operator { plus, minus, mul, div }
@@ -16,6 +18,21 @@ extension OperatorToString on Operator {
         return "*";
     }
   }
+}
+
+/// operator setter.
+Operator _getOperator(String inputChar) {
+  switch (inputChar) {
+    case "+":
+      return Operator.plus;
+    case "-":
+      return Operator.minus;
+    case "/":
+      return Operator.div;
+    case "*":
+      return Operator.mul;
+  }
+  throw ArgumentError("getOperator : unexpected input given.");
 }
 
 /// this class(or type) is for the primative double expression.
@@ -41,200 +58,49 @@ class BracketExpressionTree {
     return _expComponentsList;
   }
 
+  /// boolean for verifying if tree is not having mathmetical fallacies.
   bool _isExpressionInvalid = false;
+
+  /// reference of mother, used when the collapse() of self needed.
+  BracketExpressionTree? _mother;
+  BracketExpressionTree get mother {
+    if (_mother != null) {
+      return _mother!;
+    } else {
+      throw Exception(
+          "BracketExpressionTree.mother : top node of tree cannot get its mother.");
+    }
+  }
+
+  /// new the Tree and place it inside the this._expComponentsList at [index].
+  void _newTree(int index) {
+    if (!(0 <= index || index <= _expComponentsList.length)) {
+      throw RangeError.index(index, _expComponentsList, "_expComponentsList",
+          "BracketExpressionTree.magicalInsert : out of range cursor.");
+    }
+    var newTreeInstance = BracketExpressionTree();
+    newTreeInstance._mother = this;
+    _expComponentsList.insert(index, newTreeInstance);
+  }
+
+  /// remove the tree from its mother and spread the inner elements.
+  void collapse() {
+    if (mother == null) {
+      throw Exception(
+          "BracketExpressionTree.collapse : top node of tree cannot be collapse.");
+    }
+
+    List motherList = mother.expComponentsList;
+    int myIndex = motherList.indexOf(this);
+    motherList.removeAt(myIndex);
+    motherList.insertAll(myIndex, expComponentsList);
+
+    mother.validate();
+  }
 
   BracketExpressionTree() {
     // this._noBracketExpression = noBracketExpression;
     // this._children = children;
-  }
-
-  /// DEPRACATED FUNCTION WARNING! this method is been depracated for now.
-  /// parse expression and fill the _noBracketExpression, children property.
-  /// without validation of param!
-  void _parseExpressionNoValidation(String exp) {
-    /// get the starting index of expression, which include the starting bracket.
-    /// WARNING : must give the starting index representing the expression WITH the starting bracket.
-    /// ex : 3+"(3+5*(2))"+6 -> 2
-    /// return the parsed BracketExpressionTree, and the ending index of parsed substring.
-    /// return[0] : BracketExpressionTree
-    /// return[1] : int ending_index
-    /// ex : 3+"(3+5*(2))"+6 -> 10
-    List recursiveDetectExpression(int start) {
-      // slice then remove the first bracket
-      // log(start.toString()); //debug
-      String slicedExp = exp.substring(start + 1);
-
-      // check if "(" contains
-      if (!slicedExp.contains("(")) {
-        int firstBracketOccours = slicedExp.indexOf(")");
-        return [
-          BracketExpressionTree(
-              slicedExp.substring(0, firstBracketOccours), []),
-          firstBracketOccours
-        ];
-      }
-
-      String noBracketExpression = "";
-      List<BracketExpressionTree> childrenList = [];
-      for (int i = 1; i < exp.length; i++) {
-        String targetChar = slicedExp[i];
-        if (targetChar == "(") {
-          // in case of starting bracket occours
-          var parsedResult = recursiveDetectExpression(start + i);
-          childrenList.add(parsedResult[0]);
-          i = parsedResult[
-              1]; // automatically start from after the parsed result's ending.
-        } else if (targetChar == ")") {
-          // in case of current depth bracket ends.
-          return [
-            BracketExpressionTree(noBracketExpression, childrenList),
-            start + i
-          ];
-        } else {
-          // in case of Operator like +, -, *, / occours.
-          noBracketExpression += targetChar;
-        }
-      }
-
-      // if no ")" found, throw err.
-      throw Exception(
-          "BracketExpressionTree.parseExpression : something wrong with inpecting the expression...");
-    }
-
-    // fix the expression to ensure the proper parsing.
-    exp = "(" + exp + ")";
-
-    BracketExpressionTree resultTree = recursiveDetectExpression(0)[0];
-
-    _children = resultTree._children;
-    _noBracketExpression = resultTree._noBracketExpression;
-  }
-
-  /// DEPRACATED FUNCTION WARNING! this method is been depracated for now.
-  /// parse expression and fill the _noBracketExpression, children property.
-  void _parseExpression(String exp) {
-    // first validate the expression.
-    if (validateExpression(exp) == false) {
-      throw ArgumentError("invalid format expression has given.");
-    }
-    parseExpressionNoValidation(exp);
-  }
-
-  /// DEPRACATED FUNCTION WARNING! this method is been depracated for now.
-  /// inspect the expression for if it's format is invalid.
-  /// Return
-  /// - false : invalid
-  /// - true : valid
-  static bool _validateExpression(String exp) {
-    // put the bracket to the expression, matching with BracketExpressionTree.parseExpression
-    exp = "(" + exp + ")";
-
-    // build the whitelists
-    final whiteListNumbers = "1234567890";
-    final whiteListStringOperators = "-+*/";
-    final whitelist = whiteListStringOperators + whiteListNumbers + "." + "()";
-
-    // no number contains, return false.
-    bool isExpHasNumber = false;
-    for (int i = 0; i < whiteListNumbers.length; i++) {
-      var numchar = whiteListNumbers[i];
-      if (exp.contains(numchar)) {
-        isExpHasNumber = true;
-      }
-    }
-    if (isExpHasNumber == false) {
-      return false;
-    }
-
-    // validate if expression ONLY contains the whitelist characters.
-    for (int i = 0; i < exp.length; i++) {
-      var targetChar = exp[i];
-      if (!whitelist.contains(targetChar)) {
-        return false;
-      }
-    }
-
-    // validate if expression's operators have the proper target numbers.
-    for (int i = 0; i < exp.length; i++) {
-      var targetChar = exp[i];
-      if ("*/".contains(targetChar)) {
-        // for the case of *, /
-        // if operator index is 0 or last, automatically this is fault.
-        if (i == 0 || i == exp.length - 1) {
-          return false;
-        }
-
-        // get the front & back chars.
-        final front = exp[i - 1];
-        final back = exp[i + 1];
-
-        // if operator's front and back are not the number or the prper bracket, return false.
-        if (((whiteListNumbers + "." + ")").contains(front) &&
-                (whiteListNumbers + "." + "(").contains(back)) ==
-            false) {
-          return false;
-        }
-      } else if ("+-".contains(targetChar)) {
-        // for the case of +, -
-        // if operator index is 0 or last, automatically this is fault.
-        if (i == 0 || i == exp.length - 1) {
-          return false;
-        }
-
-        // if operator's front and back are not the number or the prper bracket, it is not the operator.
-        // if sign's front are not the number or the proper bracket, it is not the sign either.
-        // so, return false.
-        if ((whiteListNumbers + "." + "(").contains(exp[i + 1]) == false) {
-          return false;
-        }
-      }
-    }
-
-    // if "." do not have any number besides, return false.
-    for (int i = 0; i < exp.length; i++) {
-      var targetChar = exp[i];
-      if (targetChar != ".") {
-        continue;
-      }
-
-      if (i == 0 && !whiteListNumbers.contains(exp[i + 1])) {
-        return false;
-      } else if (i == exp.length - 1 &&
-          !whiteListNumbers.contains(exp[i - 1])) {
-        return false;
-      } else if (whiteListNumbers.contains(exp[i + 1]) == false &&
-          whiteListNumbers.contains(exp[i - 1]) == false) {
-        return false;
-      }
-    }
-
-    // validate if expression's opening & closing bracket's number is not matching to each other.
-    if (")".allMatches(exp).length != "(".allMatches(exp).length) {
-      return false;
-    }
-
-    // validate if brackets' arrangements are in proper state.
-    // // extract only brackets.
-    String bracketOnlyExp = "";
-    for (int i = 0; i < exp.length; i++) {
-      var targetChar = exp[i];
-      if (targetChar == "(" || targetChar == ")") {
-        bracketOnlyExp += targetChar;
-      }
-    }
-
-    // // keep removes the pair of brackets then check if there's nothing left.
-    while (bracketOnlyExp.contains("()")) {
-      final indexBracket = bracketOnlyExp.indexOf("()");
-      bracketOnlyExp = bracketOnlyExp.substring(0, indexBracket) +
-          bracketOnlyExp.substring(indexBracket + 2);
-    }
-    if (bracketOnlyExp.length != 0) {
-      return false;
-    }
-
-    // validation passed.
-    return true;
   }
 
   //region CRUD virtualize
@@ -242,7 +108,7 @@ class BracketExpressionTree {
   /// add the Operator to the current Tree's _expComponentsList.
   void _addOperator(Operator operator, int index) {
     // validation of param
-    if (!(0 <= index && index < _expComponentsList.length)) {
+    if (!(0 <= index && index <= _expComponentsList.length)) {
       throw RangeError.index(index, _expComponentsList, "_expComponentsList",
           "BracketExpressionTree._addOperator : index out of range");
     }
@@ -255,7 +121,7 @@ class BracketExpressionTree {
   /// add the NumberString to the current Tree's _expComponentsList.
   void _addNumberString(NumberString number, int index) {
     // validation of param
-    if (!(0 <= index && index < _expComponentsList.length)) {
+    if (!(0 <= index && index <= _expComponentsList.length)) {
       throw RangeError.index(index, _expComponentsList, "_expComponentsList",
           "BracketExpressionTree._addNumberString : index out of range");
     }
@@ -268,13 +134,13 @@ class BracketExpressionTree {
   /// add the Tree to the current Tree's _expComponentsList.
   void _addTree(int index) {
     // validation of param
-    if (!(0 <= index && index < _expComponentsList.length)) {
+    if (!(0 <= index && index <= _expComponentsList.length)) {
       throw RangeError.index(index, _expComponentsList, "_expComponentsList",
           "BracketExpressionTree._addTree : index out of range");
     }
 
     // put operator to the current compList. then validate the current Tree.
-    _expComponentsList.insert(index, BracketExpressionTree());
+    _newTree(index);
     validate();
   }
 
@@ -333,7 +199,7 @@ class BracketExpressionTree {
   }
 
   // change the NumberString value to the another NumberString value.
-  void _updateNumberString(int index, NumberString newNumber) {
+  void _updateNumberString(NumberString newNumber, int index) {
     // validation of param
     if (!(0 <= index && index < _expComponentsList.length)) {
       throw RangeError.index(index, _expComponentsList, "_expComponentsList",
@@ -362,7 +228,7 @@ class BracketExpressionTree {
   }
 
   // change the component (child) Tree's _expComponentsList to the another List.
-  void _updateTree(int index, List newExpCompList) {
+  void _updateTree(List newExpCompList, int index) {
     // validation of param
     if (!(0 <= index && index < _expComponentsList.length)) {
       throw RangeError.index(index, _expComponentsList, "_expComponentsList",
@@ -608,8 +474,8 @@ class BracketExpressionTree {
   /// this function finds the BracketExpressionTree to reference,
   /// index of BracketExpressionTree.expComponentsList to adjust.
   /// [targetPos] is the virtual index, assuming that original tree is stringified.
-  /// return the 
-  /// 
+  /// return the
+  ///
   /// ?[BracketExpressionTree targetReference, int targetIndex, int insertPos].
   ///
   /// for example, let the [tree].toString() = "12+34-(67/89)", and the [cursor] = 8,
@@ -653,8 +519,10 @@ class BracketExpressionTree {
         if (target is BracketExpressionTree) {
           // in case of Tree.
           // this means that cursor is on the last bracket's after like :
-          //      "...+34)<here>"
-          return [tree, i, target.length - (lengthStack - targetPos)]
+          //      "...+34)<here>"  -> insertPos=target.length
+          // or the first bracket's before like :
+          //      "<here>(34+..."  -> insertPos=0
+          return [tree, i, target.length - (lengthStack - targetPos)];
         } else if (target is Operator) {
           // in case of target is Operator
           // resultString = target.string;
@@ -673,12 +541,14 @@ class BracketExpressionTree {
     // no result found.
     return null;
   }
+
   static String InsertAllowableString = "1234567890.*/+-(";
 
   /// magical static function, that can insert the input char into the tree.
   /// can recept the :
   ///   "1234567890.", "*/+-", and "("
   ///
+  /// [cursor] can be the tree.string length.
   /// [cursor] is the virtual index, assuming that original tree is stringified.
   ///
   /// for example, let the [tree].toString() = "12+34-(67/89)", and the [cursor] = 8, inputChar is "."
@@ -692,38 +562,200 @@ class BracketExpressionTree {
       throw ArgumentError(
           "BracketExpressionTree.magicalInsert : inputChar must be one of the \"1234567890.*/+-(\". ");
     }
+    // cursor must below the length of tree.
+    if (!(0 <= cursor || cursor <= tree.length)) {
+      throw RangeError.index(
+          cursor,
+          tree._expComponentsList,
+          "_expComponentsList",
+          "BracketExpressionTree.magicalInsert : out of range cursor.");
+    }
 
     // find the target that we want to handle.
     var inspectationResult = _inspectTargetTree(tree, cursor);
     if (inspectationResult == null) {
-      throw Exception("BracketExpressionTree.magicalInsert : unexpected result occoured.");
+      throw Exception(
+          "BracketExpressionTree.magicalInsert : unexpected result occoured.");
     }
 
     // determine which action we have to avoke, case by the target
+    // // prepare the variables.
     BracketExpressionTree targetTree = inspectationResult[0];
     int elementIndex = inspectationResult[1];
     int innerInsertPos = inspectationResult[2];
-    var targetElement = targetTree._expComponentsList[elementIndex];
+    var targetElement = targetTree.expComponentsList[elementIndex];
 
+    // // prepare the cases for inputChar pre-type.
     Type inputCharType;
     if ("1234567890.".contains(inputChar)) {
       inputCharType = NumberString;
     } else if ("+-*/".contains(inputChar)) {
-      
+      inputCharType = Operator;
+    } else {
+      inputCharType = BracketExpressionTree;
     }
 
+    // // main case verifing.
+    if (inputCharType is NumberString) {
+      if (targetElement is NumberString) {
+        // insert numberstring on the numberstring means merge.
+        final targetElementString = targetElement.string;
+        final updatedString = targetElementString.substring(0, innerInsertPos) +
+            inputChar +
+            targetElementString.substring(innerInsertPos);
+        targetTree._updateNumberString(
+            NumberString(updatedString), elementIndex);
+      } else if (targetElement is Operator) {
+        // insert numberstring on the operator means the new numberstring adds.
+        // position is just 0:front, 1:back only.
+        targetTree._addNumberString(
+            NumberString(inputChar), elementIndex + innerInsertPos);
+      } else {
+        // insert numberstring on the Tree means just two special cases.
+        // both of the cases means the adds of numberstring.
+        if (elementIndex == 0) {
+          targetTree._addNumberString(NumberString(inputChar), elementIndex);
+        } else if (elementIndex == targetTree.expComponentsList.length - 1) {
+          targetTree._addNumberString(
+              NumberString(inputChar), elementIndex + 1);
+        }
+      }
+    } else if (inputCharType is Operator) {
+      if (targetElement is NumberString) {
+        // insert Operator on the numberstring means split.
+        final targetElementString = targetElement.string;
+        final aheadNumberString =
+            NumberString(targetElementString.substring(0, innerInsertPos));
+        final newOperator = _getOperator(inputChar);
+        final followNumberString =
+            NumberString(targetElementString.substring(innerInsertPos));
+        targetTree._updateNumberString(aheadNumberString, elementIndex);
+        targetTree._addNumberString(followNumberString, elementIndex + 1);
+        targetTree._addOperator(newOperator, elementIndex + 1);
+      } else if (targetElement is Operator) {
+        // insert numberstring on the operator means the new numberstring adds.
+        // position is just 0:front, 1:back only.
+        targetTree._addOperator(
+            _getOperator(inputChar), elementIndex + innerInsertPos);
+      } else {
+        // insert Operator on the Tree means just two special cases.
+        // both of the cases means the adds of Operator.
+        if (elementIndex == 0) {
+          targetTree._addOperator(_getOperator(inputChar), elementIndex);
+        } else if (elementIndex == targetTree.expComponentsList.length - 1) {
+          targetTree._addOperator(_getOperator(inputChar), elementIndex + 1);
+        } else {
+          throw Exception(
+              "BracketExpressionTree.magicalInsert: unexpected action happened.");
+        }
+      }
+    } else {
+      // this is the most creaziest part...
+      if (targetElement is NumberString) {
+        // insert Tree on the number means split of number and create of tree.
+        final targetElementString = targetElement.string;
+        final aheadNumberString =
+            NumberString(targetElementString.substring(0, innerInsertPos));
+        final followNumberString =
+            NumberString(targetElementString.substring(innerInsertPos));
+        targetTree._updateNumberString(aheadNumberString, elementIndex);
+        targetTree._addNumberString(followNumberString, elementIndex + 1);
+        targetTree._addTree(elementIndex + 1);
+      } else if (targetElement is Operator) {
+        // insert Tree on the operator means the new numberstring adds.
+        // position is just 0:front, 1:back only.
+        targetTree._addTree(elementIndex + innerInsertPos);
+      } else {
+        // also the insertion of tree on the tree is just adding another tree inside tree.
+        if (elementIndex == 0) {
+          targetTree._addTree(elementIndex);
+        } else if (elementIndex == targetTree.expComponentsList.length - 1) {
+          targetTree._addTree(elementIndex + 1);
+        } else {
+          throw Exception(
+              "BracketExpressionTree.magicalInsert: unexpected action happened.");
+        }
+      }
+    }
+
+    // for sure, function could not reach this area.
+    throw Exception(
+        "BracketExpressionTree.magicalInsert: unexpected action happened.");
+  }
+
+  /// magical static function, that can insert the input char into the tree.
+  ///
+  /// [cursor] range can be the length of tree.string
+  ///
+  /// deletion of char is occours the front of the cursor.
+  /// eg : "12+34+5<delete here>6" -> "12+34+6"
+  static void magicalDelete(BracketExpressionTree tree, int cursor) {
+    // validation of param.
+    // cursor must below the length of tree.
+    if (!(0 <= cursor || cursor <= tree.length)) {
+      throw RangeError.index(
+          cursor,
+          tree._expComponentsList,
+          "_expComponentsList",
+          "BracketExpressionTree.magicalInsert : out of range cursor.");
+    }
+
+    // find the target that we want to handle.
+    var inspectationResult = _inspectTargetTree(tree, cursor);
+    if (inspectationResult == null) {
+      throw Exception(
+          "BracketExpressionTree.magicalInsert : unexpected result occoured.");
+    }
+
+    // determine which action we have to avoke, case by the target
+    // // prepare the variables.
+    BracketExpressionTree targetTree = inspectationResult[0];
+    int elementIndex = inspectationResult[1];
+    int innerDeletionPos = inspectationResult[2];
+    var targetElement = targetTree.expComponentsList[elementIndex];
+
+    // if innerDeletionPos is 0, conversion of indices or the deletion of tree is needed.
+    if (innerDeletionPos == 0) {
+      if (elementIndex == 0) {
+        // both innerDeletionPos and elementIndex are 0 then the tree must be collapsed.
+        tree.collapse();
+        return;
+      }
+      // only innerDeletionPos is 0, just moves to the front element.
+      elementIndex -= 1;
+      targetElement = targetTree.expComponentsList[elementIndex];
+      if (targetElement is NumberString || targetElement is Operator) {
+        innerDeletionPos = targetElement.string.length;
+      } else {
+        // if deletion target is tree, must be collapsed.
+        tree.collapse();
+        return;
+      }
+    }
+
+    // // main case verifing.
     if (targetElement is NumberString) {
-      String targetElementString = targetElement.string;
-      String updatedString = targetElementString.substring(0,innerInsertPos) + inputChar + targetElementString.substring(innerInsertPos);
-      targetTree._updateNumberString(elementIndex, NumberString(updatedString));
+      // delete char of the numberstring means delete one digit.
+      final targetElementString = targetElement.string;
+      final updatedString =
+          targetElementString.substring(0, targetElementString.length - 1);
+      if (updatedString.isNotEmpty) {
+        targetTree._updateNumberString(
+            NumberString(updatedString), elementIndex);
+      } else {
+        // if no digit left, delete that.
+        targetTree._deleteNumberString(elementIndex);
+      }
     } else if (targetElement is Operator) {
-
+      // delete one char on the operator means just delete.
+      targetTree._deleteOperator(elementIndex);
+    } else {
+      // delete tree means collapse.
+      targetElement.collapse();
     }
 
-
-
-    // if ("1234567890.".contains(inputChar)) {
-    //   // this means we have to try to update the number.
-    // }
+    // for sure, function could not reach this area.
+    throw Exception(
+        "BracketExpressionTree.magicalInsert: unexpected action happened.");
   }
 }
