@@ -5,10 +5,7 @@ import 'package:calculator/controller/calc_manager.dart';
 // import 'package:calculator/library/math_expression.dart';
 // import 'dart:developer';
 
-Widget ExpandedOutlinedButton(
-    {required void Function()? onPressed,
-    required Widget child,
-    required Color color}) {
+Widget ExpandedOutlinedButton({required void Function()? onPressed, required Widget child, required Color color}) {
   return Expanded(
       child: Container(
     color: color,
@@ -41,10 +38,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Color specialColor = Color.fromARGB(161, 255, 64, 128);
   void randomColorMixer() {
     specialColor = Color.fromARGB(
-        (random.nextDouble() * 256) as int,
-        (random.nextDouble() * 256) as int,
-        (random.nextDouble() * 256) as int,
-        (random.nextDouble() * 256) as int);
+        (random.nextDouble() * 256) as int, (random.nextDouble() * 256) as int, (random.nextDouble() * 256) as int, (random.nextDouble() * 256) as int);
   }
 
   CalcManager calcManager = CalcManager();
@@ -69,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     //debug
     calcManager.debug();
-    // log(evaluateExpression("30.").toString());
+    // debugConsole(evaluateExpression("30.").toString());
     //debug
   }
 
@@ -87,13 +81,9 @@ class _MyHomePageState extends State<MyHomePage> {
     expressionTextController.text = newText;
 
     if (text.length > newText.length) {
-      expressionTextController.selection = TextSelection(
-          baseOffset: select.baseOffset - 1,
-          extentOffset: select.extentOffset - 1);
+      expressionTextController.selection = TextSelection(baseOffset: select.baseOffset - 1, extentOffset: select.extentOffset - 1);
     } else if (text.length < newText.length) {
-      expressionTextController.selection = TextSelection(
-          baseOffset: select.baseOffset + 1,
-          extentOffset: select.extentOffset + 1);
+      expressionTextController.selection = TextSelection(baseOffset: select.baseOffset + 1, extentOffset: select.extentOffset + 1);
     } else {
       expressionTextController.selection = select;
     }
@@ -118,12 +108,8 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             Flexible(
               flex: 1,
-              child: partLCD(
-                  calcManager.getExpression(),
-                  calcManager.getResult(),
-                  expressionScrollController,
-                  resultScrollController,
-                  expressionTextController),
+              child:
+                  partLCD(calcManager.getExpression(), calcManager.getResult(), expressionScrollController, resultScrollController, expressionTextController),
             ),
             Flexible(flex: 2, child: Container(child: partButton())),
           ],
@@ -134,11 +120,7 @@ class _MyHomePageState extends State<MyHomePage> {
         );
   }
 
-  Widget partLCD(
-      String expressionString,
-      String resultString,
-      ScrollController expressionScrollController,
-      ScrollController resultScrollController,
+  Widget partLCD(String expressionString, String resultString, ScrollController expressionScrollController, ScrollController resultScrollController,
       TextEditingController expressionTextController) {
     return Column(
       children: [
