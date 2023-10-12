@@ -1,7 +1,9 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:calculator/controller/calc_manager.dart';
-import 'package:calculator/library/math_expression.dart';
-import 'dart:developer';
+// import 'package:calculator/library/math_expression.dart';
+// import 'dart:developer';
 
 Widget ExpandedOutlinedButton(
     {required void Function()? onPressed,
@@ -35,6 +37,16 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final random = Random.secure();
+  Color specialColor = Color.fromARGB(161, 255, 64, 128);
+  void randomColorMixer() {
+    specialColor = Color.fromARGB(
+        (random.nextDouble() * 256) as int,
+        (random.nextDouble() * 256) as int,
+        (random.nextDouble() * 256) as int,
+        (random.nextDouble() * 256) as int);
+  }
+
   CalcManager calcManager = CalcManager();
 
   ScrollController expressionScrollController = ScrollController();
@@ -53,6 +65,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     expressionTextController.addListener(onExpressionTextSelectionChanged);
     calcManager.onExpressionChanged = onExpressionChanged;
+    randomColorMixer();
 
     //debug
     calcManager.debug();
@@ -181,16 +194,19 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Text("AC")),
         ExpandedOutlinedButton(
             onPressed: () => {
-                  setState(() => {calcManager.addExpLeftBracket()})
+                  setState(() => {calcManager.addExpBracket()})
                 },
             color: ACBracketColor,
-            child: Text("(")),
+            child: Text("()")),
         ExpandedOutlinedButton(
             onPressed: () => {
-                  setState(() => {calcManager.addExpRightBracket()})
+                  setState(() => {randomColorMixer()})
                 },
             color: ACBracketColor,
-            child: Text(")")),
+            child: Icon(
+              Icons.bike_scooter,
+              color: specialColor,
+            )),
       ],
     );
 

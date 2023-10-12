@@ -103,7 +103,7 @@ class BracketExpressionTree {
     // this._children = children;
   }
 
-  //region CRUD virtualize
+  // #region CRUD virtualize
 
   /// add the Operator to the current Tree's _expComponentsList.
   void _addOperator(Operator operator, int index) {
@@ -257,9 +257,9 @@ class BracketExpressionTree {
     validate();
   }
 
-  //endregion
+  // #endregion
 
-  //region override primative functuation
+  // #region override primative functuation
 
   static String doubleToString(double number) {
     return number.toString();
@@ -303,9 +303,9 @@ class BracketExpressionTree {
     return currentLength;
   }
 
-  //endregion
+  // #endregion
 
-  //region validation and evaluation
+  // #region validation and evaluation
 
   /// inspect the current _numberList, _operatorList.
   /// if fallacy has found, change the current _isExpressionInvalid to false.
@@ -357,11 +357,11 @@ class BracketExpressionTree {
   /// this function do the tight-validation.
   /// it will not calculate the empty numberList (ex : the "()" ),
   /// not calculate the missing target Operators (ex : the "3*5+"), and other diverse fallacy cases.
-  /// if fallacy appeared, this function just return the double.nan!
-  double evaluate() {
+  /// if fallacy appeared, this function  return null.
+  double? evaluate() {
     // if this Tree's _isExpressionInvalid is false, stop the evaluation.
     if (_isExpressionInvalid == false) {
-      return double.nan;
+      return null;
     }
 
     // evaluate the some numberList elements if they are the BracketExpressionTree instance.
@@ -372,10 +372,14 @@ class BracketExpressionTree {
       var child = _expComponentsList[i];
       double evaluatedValue;
       if (child is BracketExpressionTree) {
-        evaluatedValue = child.evaluate();
+        var evaluateResult = child.evaluate();
+        if (evaluateResult == null) {
+          return null;
+        }
+        evaluatedValue = evaluateResult;
       } else if (child is NumberString) {
         if (child.number == null) {
-          return double.nan;
+          return null;
         }
         evaluatedValue = child.number!;
       } else {
@@ -453,23 +457,9 @@ class BracketExpressionTree {
     return resultDouble;
   }
 
-  // print the noBracketExpression and the children list.
-  void debugLogSelf() {
-    log("current number list : ");
-    log("[");
-    _expComponentsList.forEach((comp) {
-      if (comp is BracketExpressionTree) {
-        comp.debugLogSelf();
-        log(",");
-      } else if (comp is Operator) {
-        log(comp.string);
-      } else {
-        log(doubleToString(comp));
-      }
-    });
-    log("]");
-  }
-  //endregion
+  // #endregion
+
+  // #region magical & non-magical static method
 
   /// this function finds the BracketExpressionTree to reference,
   /// index of BracketExpressionTree.expComponentsList to adjust.
@@ -757,5 +747,30 @@ class BracketExpressionTree {
     // for sure, function could not reach this area.
     throw Exception(
         "BracketExpressionTree.magicalInsert: unexpected action happened.");
+  }
+
+  static BracketExpressionTree newNumericTree(String numberString) {
+    var newTree = BracketExpressionTree();
+    newTree.expComponentsList.add(NumberString(numberString));
+    return newTree;
+  }
+
+  // #endregion
+
+  /// print the noBracketExpression and the children list.
+  void debugLogSelf() {
+    log("current number list : ");
+    log("[");
+    _expComponentsList.forEach((comp) {
+      if (comp is BracketExpressionTree) {
+        comp.debugLogSelf();
+        log(",");
+      } else if (comp is Operator) {
+        log(comp.string);
+      } else {
+        log(doubleToString(comp));
+      }
+    });
+    log("]");
   }
 }

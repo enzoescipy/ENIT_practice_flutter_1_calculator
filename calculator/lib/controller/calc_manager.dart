@@ -6,21 +6,15 @@ import 'package:calculator/library/math_expression.dart';
 enum ExpFault { invalid, abnormal }
 
 class CalcManager {
-  String _expression = "";
-  void _setExpression(String exp) {
-    _expression = exp;
-    if (onExpressionChanged != null) {
-      onExpressionChanged!(exp);
-    }
-  }
+  BracketExpressionTree _BETree = BracketExpressionTree();
 
   // this function will be called after the expression changed.
   void Function(String)? onExpressionChanged;
 
-  int? _cursor = null;
+  int? _cursor;
 
-  double? _result =
-      null; // if null, this means that the result is not the normal double value.
+  double?
+      _result; // if null, this means that the result is not the normal double value.
   // invalid -> wrong expression, abnormal -> infinite or not-a-number
 
   ExpFault _abnormalCase = ExpFault.invalid;
@@ -35,13 +29,13 @@ class CalcManager {
 
   /// debug function. delete this when production!!
   void debug() {
-    _setExpression("12+34+(5.6*7.8)/9");
+    // _setExpression("12+34+(5.6*7.8)/9");
     _calculate();
   }
 
   /// get expression from the manager.
   String getExpression() {
-    var showableExp = _expression.replaceAll("/", "÷");
+    var showableExp = _BETree.toString().replaceAll("/", "÷");
     return showableExp;
   }
 
@@ -54,24 +48,19 @@ class CalcManager {
     }
   }
 
-  /// evaluate the current _expression, then fill the _result.
+  /// evaluate the current _BETree, then fill the _result.
   /// also change the _abnormalCase if needed.
   void _calculate() {
-    var evaluateResult = evaluateExpression(_expression);
-    if (evaluateResult[1] == 0) {
-      _result = evaluateResult[0];
-    } else if (evaluateResult[1] == 1) {
+    var evaluateResult = _BETree.evaluate();
+    if (evaluateResult == null) {
       _result = null;
       _abnormalCase = ExpFault.invalid;
-    } else {
+    } else if (evaluateResult == double.nan) {
       _result = null;
       _abnormalCase = ExpFault.abnormal;
+    } else {
+      _result = evaluateResult;
     }
-  }
-
-  /// validate if the current _expression is valid format.
-  bool _validate(String exp) {
-    return validateExpression(exp);
   }
 
   /// check if some new cursor value is fittable in the expression length.
@@ -80,20 +69,12 @@ class CalcManager {
   /// - false : not fittable
   /// - true : fittable
   bool _isCursorFittable(int newCursor) {
-    if (newCursor < 0 || newCursor > _expression.length) {
+    if (newCursor < 0 || newCursor > _BETree.length) {
       return false;
     } else {
       return true;
     }
   }
-
-  // /// check if current cursor value is fittable in the expression length
-  // void _validateCursor() {
-  //   if (!_isCursorFittable(_cursor)) {
-  //     throw ArgumentError(
-  //         "CalcManager._validateCursor : non-fittable cursor position.");
-  //   }
-  // }
 
   void moveCursor(int newCursor) {
     if (_isCursorFittable(newCursor)) {
@@ -110,14 +91,12 @@ class CalcManager {
 
   /// add 1 length char to the expression, then run the calculate
   /// running without validaiton of param
-  void _addCharExpression(String numberChar) {
+  void _addCharExpression(String inputChar) {
     if (_cursor == null) {
       return;
     }
     int cursor = _cursor!;
-    _setExpression(_expression.substring(0, cursor) +
-        numberChar +
-        _expression.substring(cursor));
+    BracketExpressionTree.magicalInsert(_BETree, cursor, inputChar);
     if (onAdd != null) {
       onAdd!();
     }
@@ -170,13 +149,8 @@ class CalcManager {
   }
 
   /// add bracket "(" to the expression.
-  void addExpLeftBracket() {
+  void addExpBracket() {
     _addCharExpression("(");
-  }
-
-  /// add bracket ")" to the expression.
-  void addExpRightBracket() {
-    _addCharExpression(")");
   }
 
   void addExpMul() {
@@ -197,7 +171,7 @@ class CalcManager {
 
   /// delete the all of the expression
   void initializeExpression() {
-    _setExpression("");
+    _BETree = BracketExpressionTree();
     _result = null;
     _abnormalCase = ExpFault.invalid;
   }
@@ -208,8 +182,7 @@ class CalcManager {
       return;
     }
     int cursor = _cursor!;
-    _setExpression(
-        _expression.substring(0, cursor - 1) + _expression.substring(cursor));
+    BracketExpressionTree.magicalDelete(_BETree, cursor);
     if (onDelete != null) {
       onDelete!();
     }
@@ -225,6 +198,6 @@ class CalcManager {
     if (_result == null) {
       return;
     }
-    _setExpression(_result.toString());
+    _BETree = BracketExpressionTree.newNumericTree(_result.toString());
   }
 }
