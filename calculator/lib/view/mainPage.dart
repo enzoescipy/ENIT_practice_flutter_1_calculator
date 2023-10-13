@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:calculator/library/debugConsole.dart';
 import 'package:flutter/material.dart';
 import 'package:calculator/controller/calc_manager.dart';
+import 'package:flutter_simple_calculator/flutter_simple_calculator.dart';
 // import 'package:calculator/library/math_expression.dart';
 // import 'dart:developer';
 
@@ -54,10 +55,18 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final random = Random.secure();
-  Color specialColor = Color.fromARGB(161, 255, 64, 128);
+  List<int> specialColorARGB = [161, 255, 64, 128];
+  Color getSpecialColor() {
+    return Color.fromARGB(specialColorARGB[0], specialColorARGB[1], specialColorARGB[2], specialColorARGB[3]);
+  }
+
   void randomColorMixer() {
-    specialColor = Color.fromARGB(
-        (random.nextDouble() * 256).toInt(), (random.nextDouble() * 256).toInt(), (random.nextDouble() * 256).toInt(), (random.nextDouble() * 256).toInt());
+    specialColorARGB = [
+      (random.nextDouble() * 256).toInt(),
+      (random.nextDouble() * 256).toInt(),
+      (random.nextDouble() * 256).toInt(),
+      (random.nextDouble() * 256).toInt()
+    ];
   }
 
   CalcManager calcManager = CalcManager();
@@ -72,6 +81,36 @@ class _MyHomePageState extends State<MyHomePage> {
   Color ACBracketColor = Color.fromARGB(106, 92, 163, 221);
   Color numpadDeleteColor = Color.fromARGB(120, 110, 207, 131);
   Color OperatorEqualColor = Color.fromARGB(108, 255, 226, 250);
+
+  /// funny prebuilt flutter calculator widget
+  void openPrebuiltCalculator() {
+    var calc = SimpleCalculator(
+      hideExpression: false,
+      hideSurroundingBorder: true,
+      autofocus: true,
+      theme: CalculatorThemeData(
+        borderColor: Colors.black,
+        borderWidth: 2,
+        displayColor: Colors.black,
+        displayStyle: TextStyle(fontSize: 80, color: Colors.white),
+        expressionColor: Color.fromARGB(150, specialColorARGB[1], specialColorARGB[2], specialColorARGB[3]),
+        expressionStyle: TextStyle(fontSize: 20, color: Colors.white),
+        operatorColor: Color.fromARGB(100, specialColorARGB[1], specialColorARGB[2], specialColorARGB[3]),
+        operatorStyle: TextStyle(fontSize: 30, color: Colors.white),
+        commandColor: Color.fromARGB(200, specialColorARGB[1], specialColorARGB[2], specialColorARGB[3]),
+        commandStyle: TextStyle(fontSize: 30, color: Colors.white),
+        numColor: Color.fromARGB(255, specialColorARGB[1], specialColorARGB[2], specialColorARGB[3]),
+        numStyle: TextStyle(fontSize: 50, color: Colors.white),
+      ),
+    );
+
+    showModalBottomSheet(
+        isScrollControlled: true,
+        context: context,
+        builder: (BuildContext context) {
+          return SizedBox(height: MediaQuery.of(context).size.height * 0.75, child: calc);
+        });
+  }
 
   @override
   void initState() {
@@ -153,9 +192,18 @@ class _MyHomePageState extends State<MyHomePage> {
             children: [
               Flexible(
                 flex: 1,
-                child: partLCD(calcManager.getResult(), expressionScrollController, resultScrollController, expressionTextController, expressionFocusControll),
+                child: Container(
+                  margin: EdgeInsets.fromLTRB(15, 10, 15, 10),
+                  padding: EdgeInsets.zero,
+                  child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                          color: Colors.blueGrey[50],
+                          child: partLCD(
+                              calcManager.getResult(), expressionScrollController, resultScrollController, expressionTextController, expressionFocusControll))),
+                ),
               ),
-              Flexible(flex: 2, child: Container(margin: EdgeInsets.all(10), child: partButton())),
+              Flexible(flex: 2, child: Container(margin: EdgeInsets.all(15), child: partButton())),
             ],
           )
           // body: Column(
@@ -184,7 +232,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 readOnly: true,
                 showCursor: true,
                 autofocus: true,
-                style: TextStyle(fontSize: 40),
+                style: TextStyle(fontSize: 40, fontFamily: "Tmoney", color: commonColor),
                 decoration: InputDecoration.collapsed(hintText: ""),
               ),
             ),
@@ -204,7 +252,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: SelectableText(
                     resultString,
                     textAlign: TextAlign.right,
-                    style: const TextStyle(fontSize: 20),
+                    style: TextStyle(fontSize: 20, fontFamily: "Tmoney", color: commonColor.withAlpha(100)),
                     showCursor: true,
                   ),
                 ),
@@ -233,12 +281,15 @@ class _MyHomePageState extends State<MyHomePage> {
             child: TextTemplet("()")),
         ExpandedOutlinedButton(
             onPressed: () => {
-                  setState(() => {randomColorMixer()})
+                  setState(() {
+                    randomColorMixer();
+                    openPrebuiltCalculator();
+                  })
                 },
             color: ACBracketColor,
             child: Icon(
               Icons.bike_scooter,
-              color: specialColor,
+              color: getSpecialColor(),
               size: 40,
             )),
       ],
