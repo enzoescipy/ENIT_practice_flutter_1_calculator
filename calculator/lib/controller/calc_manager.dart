@@ -9,15 +9,18 @@ enum ExpFault { invalid, abnormal }
 class CalcManager {
   BracketExpressionTree _BETree = BracketExpressionTree();
 
+  /// store the right before tree's tail Operator and tail Number, for the repetable equal calculation.
+  BracketExpressionTree? _historyTree;
+
   /// this function will be called after the expression changed.
   /// state means some special case alert.
-  /// state: 
+  /// state:
   ///   -1 -> single char deleted.
   ///   0 -> single char added.
   ///   1 -> expressionEquals() fired
   ///   2 -> bracket, the "()",  added.
   void Function(String exp, int state)? onExpressionChanged;
-  
+
   void Function(ExpFault faultCase)? onInvalidRequest;
 
   int? _cursor;
@@ -101,10 +104,11 @@ class CalcManager {
       BracketExpressionTree.magicalInsert(_BETree, cursor, inputChar);
     } on NotAllowedValueError {
       if (onInvalidRequest != null) {
-        onInvalidRequest!(ExpFault.abnormal);
+        onInvalidRequest!(ExpFault.invalid);
       }
     }
     _calculate();
+    _historyTree = null;
     if (onExpressionChanged != null) {
       onExpressionChanged!(_BETree.toString(), state);
     }
@@ -181,6 +185,8 @@ class CalcManager {
     _BETree = BracketExpressionTree();
     _result = null;
     _abnormalCase = ExpFault.invalid;
+    _historyTree = null;
+
     if (onExpressionChanged != null) {
       onExpressionChanged!(_BETree.toString(), 1);
     }
@@ -193,15 +199,10 @@ class CalcManager {
     }
     int cursor = _cursor!;
 
-    try {
-      BracketExpressionTree.magicalDelete(_BETree, cursor);
-    } on NotAllowedValueError {
-      if (onInvalidRequest != null) {
-        onInvalidRequest!(ExpFault.abnormal);
-      }
-    }
+    BracketExpressionTree.magicalDelete(_BETree, cursor);
 
     _calculate();
+    _historyTree = null;
     if (onExpressionChanged != null) {
       onExpressionChanged!(_BETree.toString(), -1);
     }
@@ -211,7 +212,7 @@ class CalcManager {
   /// then put the current _result into the expression again.
   /// if the expresion result is not the normal case, do nothing.
   ///
-  /// reguard the _calculate() is called before.
+  /// reguards the _calculate() is called before.
   void expressionEquals() {
     if (_result == null) {
       if (onInvalidRequest != null) {
@@ -220,7 +221,53 @@ class CalcManager {
       return;
     }
 
-    _BETree = BracketExpressionTree.newNumericTree(_result.toString());
+    // if _historyTree is not null, it means,
+    // that the expressionEquals() was once called, then the other deletion, insertion, initialization of symbol,
+    // was not happened.
+    if (_historyTree != null) {
+      _repeatedEquals();
+      return;
+    }
+
+    // save the tail operator & number to the _historyTree. (can be null)
+    _historyTree = BracketExpressionTree.newHistoricalTree(_BETree);
+
+    // initialize the BETree
+    _BETree = BracketExpressionTree.newNumericTree(doubleToString(_result!));
+
+    if (onExpressionChanged != null) {
+      onExpressionChanged!(_BETree.toString(), 1);
+    }
+  }
+
+  /// drag the result from the historyTree, then re-calculate the result with,
+  /// repeated tail Operator & number.
+  ///
+  /// e.g : 1+3+(5.3) -> expressionEquals() -> 9.3 -> repeatedEquals() -> (9.3+5.3 =) 14.6
+  void _repeatedEquals() {
+    if (_historyTree == null) {
+      return;
+    }
+    _historyTree!.validate();
+    double? evaluateResult = _historyTree!.evaluate();
+    if (evaluateResult == null) {
+      if (onInvalidRequest != null) {
+        onInvalidRequest!(ExpFault.invalid);
+      }
+      return;
+    } else if (evaluateResult.isNaN) {
+      if (onInvalidRequest != null) {
+        onInvalidRequest!(ExpFault.abnormal);
+      }
+      return;
+    }
+
+    // debugConsole([evaluateResult, _historyTree]);
+
+    _result = evaluateResult;
+    _BETree = BracketExpressionTree.newNumericTree(doubleToString(evaluateResult));
+
+    _historyTree = BracketExpressionTree.newHistoricalTree(_historyTree!);
 
     if (onExpressionChanged != null) {
       onExpressionChanged!(_BETree.toString(), 1);

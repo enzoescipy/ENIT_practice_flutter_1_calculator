@@ -56,6 +56,10 @@ class NumberString {
   }
 }
 
+String doubleToString(double number) {
+  return number.toString();
+}
+
 class BracketExpressionTree {
   // Operator can be  enum that represent the +, -, *, / position.
   // number can be the type of NumberString, and the BracketExpressionTree.
@@ -100,7 +104,12 @@ class BracketExpressionTree {
     List motherList = mother.expComponentsList;
     int myIndex = motherList.indexOf(this);
     motherList.removeAt(myIndex);
-    motherList.insertAll(myIndex, expComponentsList);
+    expComponentsList.forEach((element) {
+      if (element is BracketExpressionTree) {
+        element._mother = mother;
+      }
+      motherList.insert(myIndex, element);
+    });
 
     mother.validate();
   }
@@ -220,7 +229,10 @@ class BracketExpressionTree {
 
     // check if the new value is not the abnormal NumberString value.
     if (newNumber.number == null || newNumber.number!.isNaN || newNumber.number!.isInfinite) {
-      throw NotAllowedValueError("BracketExpressionTree._updateNumberString : abnormal number value (eg. nan, inf, invalid expression) is now allowed.");
+      // just delete quietly.
+      _deleteNumberString(index);
+      return;
+      // throw NotAllowedValueError("BracketExpressionTree._updateNumberString : abnormal number value (eg. nan, inf, invalid expression) is now allowed.");
     }
 
     // change operator to the current compList. then validate the current Tree.
@@ -316,38 +328,75 @@ class BracketExpressionTree {
   /// if fallacy not found, change the current _isExpressionInvalid to true.
   /// this function just can change the _isExpressionInvalid value only. can't change the other parameters.
   ///
-  /// this function do the tight-validation.
-  /// it will not allow the empty numberList (ex : the "()" ),
-  /// not allow the missing target Operators (ex : the "3*5+"), and other diverse fallacy cases.
+  /// this function do the loose-validation.
+  /// will allow the target unidentified + and - , by adds the 0s. (ex : "3*5+" -> "3*5+0", "3+-5" -> "3+0-5")
+  /// will regard the consecutive bracket pair as multipling. like (3+5) (5*3) =  (3+5) * (5*3)
+  /// will also regard the 3 (3+5)  as  3 * (3+5), too.
+  ///
+  /// this function do the reverse-depth validation.
+  /// it means that if the tree has the children trees, they will not validated.
+  /// instead, the mother(parent) tree will be requested to call her own validate() method.
   void validate() {
+    debugConsole(["validate iam : ", debugString()]);
+    // first validate the parent.
+    if (_mother != null) {
+      _mother!.validate();
+    }
+
+    // if empty tree, this means just ok.
+    if (_expComponentsList.isEmpty) {
+      _isExpressionInvalid = false;
+      return;
+    }
+
+    List<Operator> looseOperators = [Operator.minus, Operator.plus];
+    List<Operator> tightOperators = [Operator.mul, Operator.div];
     // check if the number(+ the BracketExpressionTree object) and the operator appears taking each other's turn.
     // if the operator is ont the index 0, or the violation of the ordering appears,
     // change _isExpressionInvalid true.
-    if (_expComponentsList.length == 0 || _expComponentsList[0] is Operator || _expComponentsList[_expComponentsList.length - 1] is Operator) {
+    if (tightOperators.contains(_expComponentsList[0]) || tightOperators.contains(_expComponentsList[_expComponentsList.length - 1])) {
       _isExpressionInvalid = true;
       // debugConsole("fallacy 0");
       return;
     }
-    bool isOperatorAppeared = true;
-    for (int i = 0; i < _expComponentsList.length; i++) {
+
+    bool isOperatorAppeared = _expComponentsList[0] is Operator;
+    for (int i = 1; i < _expComponentsList.length; i++) {
       var component = _expComponentsList[i];
       if (component is Operator) {
         // current target component is the operator.
-        if (isOperatorAppeared == true) {
+        // in case of two operator is consecutive like : 3"+-"5,
+        // check if two operators has at least 1 number beside.
+        final operatorAhead = i - 1;
+        final operatorFollow = i;
+        if (isOperatorAppeared == true &&
+            (operatorAhead == 0 ||
+                operatorFollow == _expComponentsList.length - 1 ||
+                _expComponentsList[operatorAhead - 1] is Operator ||
+                _expComponentsList[operatorFollow + 1] is Operator ||
+                tightOperators.contains(_expComponentsList[operatorAhead]) ||
+                tightOperators.contains(_expComponentsList[operatorFollow]))) {
           _isExpressionInvalid = true;
-          // debugConsole("fallacy 1");
           return;
         } else {
           isOperatorAppeared = true;
         }
       } else {
-        // current target component is the number (or Tree).
-        if (isOperatorAppeared == true) {
-          isOperatorAppeared = false;
-        } else {
+        // if component is tree, it must be not empty.
+        if (component is BracketExpressionTree && component._expComponentsList.isEmpty) {
           _isExpressionInvalid = true;
-          // debugConsole("fallacy 2");
           return;
+        }
+
+        // current target component is the number (or Tree).
+        // in case of tree and tree are consecutive like (3)(5), 3(5), (3)5
+        // this is okey.
+        var componentAhead = _expComponentsList[i - 1];
+        if (isOperatorAppeared == false && component is NumberString && componentAhead is NumberString) {
+          _isExpressionInvalid = true;
+          return;
+        } else {
+          isOperatorAppeared = false;
         }
       }
     }
@@ -363,53 +412,90 @@ class BracketExpressionTree {
   /// - double.nan : inf, -inf, or nan returned ever once.
   /// - null : invalid input
   ///
-  /// this function do the tight-validation.
-  /// it will not calculate the empty numberList (ex : the "()" ),
-  /// not calculate the missing target Operators (ex : the "3*5+"), and other diverse fallacy cases.
-  /// if fallacy appeared, this function  return null.
+  /// this function do the loose-validation.
+  /// will allow the target unidentified + and - , by adds the 0s. (ex : "3*5+" -> "3*5+0", "3+-5" -> "3+0-5")
+  /// will regard the consecutive bracket pair as multipling. like (3+5) (5*3) =  (3+5) * (5*3)
+  /// will also regard the 3 (3+5)  as  3 * (3+5), too.
   double? evaluate() {
     // if this Tree's _isExpressionInvalid is false, stop the evaluation.
     if (_isExpressionInvalid == true) {
       return null;
     }
 
+    // empty list alone is not allowed.
+    if (_expComponentsList.isEmpty) {
+      return null;
+    }
+
     // evaluate the some numberList elements if they are the BracketExpressionTree instance.
     // also convert the NumberString to double if possible.
+    // if empty tree element, evaluated value is just 0.
     // if not, return the double.nan right away.
     var evaluatedList = [];
+    bool isOperatorBefore = true;
     for (int i = 0; i < _expComponentsList.length; i++) {
       var child = _expComponentsList[i];
       double evaluatedValue;
-      if (child is BracketExpressionTree) {
-        var evaluateResult = child.evaluate();
-        if (evaluateResult == null) {
-          return null;
-        }
-        evaluatedValue = evaluateResult;
-      } else if (child is NumberString) {
-        if (child.number == null) {
-          return null;
-        }
-        evaluatedValue = child.number!;
-      } else {
+      if (child is Operator) {
         evaluatedList.add(child);
+        isOperatorBefore = true;
         continue;
+      } else {
+        if (child is BracketExpressionTree) {
+          var evaluateResult = child.evaluate();
+          // if null returned, directly return null.
+          // if child is empty tree, this is also null.
+          if (child.expComponentsList.isEmpty) {
+            return null;
+          } else if (evaluateResult == null) {
+            return null;
+          }
+          evaluatedValue = evaluateResult;
+        } else {
+          if (child.number == null) {
+            return null;
+          }
+          evaluatedValue = child.number!;
+        }
+        // if consecutive tree (or tree - number or number - tree), add "*" between them
+        if (!isOperatorBefore) {
+          evaluatedList.add(Operator.mul);
+        }
+        isOperatorBefore = false;
       }
+
+      // even if one section value is NaN or Infinite -> return nan
       if (evaluatedValue.isNaN || evaluatedValue.isInfinite) {
         return double.nan;
       }
+
       evaluatedList.add(evaluatedValue);
     }
 
     // seperate the numbers and the operators.
+    // if head or tail is operator, or the two operators are sticked together,
+    // just add the 0.0 on the head, tail, and the between of the two operators.
+    if (evaluatedList[0] is Operator) {
+      evaluatedList.insert(0, 0.0);
+    }
+    if (evaluatedList[evaluatedList.length - 1] is Operator) {
+      evaluatedList.insert(evaluatedList.length, 0.0);
+    }
     List<double> numberList = [];
     List<Operator> operatorList = [];
+    isOperatorBefore = false;
     for (int i = 0; i < evaluatedList.length; i++) {
       var target = evaluatedList[i];
       if (target is Operator) {
+        // case of the two operators are sticked together
+        if (isOperatorBefore) {
+          numberList.add(0.0);
+        }
         operatorList.add(target);
+        isOperatorBefore = true;
       } else {
         numberList.add(target);
+        isOperatorBefore = false;
       }
     }
 
@@ -485,6 +571,13 @@ class BracketExpressionTree {
     if (tree.expComponentsList.length == 0) {
       return null;
     }
+
+    // if targetPos < 0, this means that actuall target is outside of the tree.
+    // so, we don't need to inspect that tree.
+    if (targetPos < 0) {
+      return null;
+    }
+
     // this value will represent the temporary target index within the whole expression string.
     int lengthStack = 0;
     var treeCompList = tree.expComponentsList;
@@ -499,6 +592,7 @@ class BracketExpressionTree {
         //      ...6 char before...(12+3+9)<here>
         // your current lengthStack = 6, and cursor = 14.
         // if you want the correct target, you must put the targetPos = 7. (the 14 - 6 - 1)
+        //
         // debugConsole(["put the", targetPos - lengthStack - 1, "by", targetPos, lengthStack]);
         var inspectResult = _inspectTargetTree(target, targetPos - lengthStack - 1);
         if (inspectResult != null) {
@@ -538,7 +632,7 @@ class BracketExpressionTree {
           // resultString = resultString.substring(0, insertPos) +
           //     resultString.substring(insertPos);
           // var createdNum = NumberString(resultString);
-          // debugConsole(["(case : 2) result is", tree.debugString(), i, insertPos]);
+          // debugConsole(["(/case : 2) result is", tree.debugString(), i, insertPos]);
           return [tree, i, insertPos];
         }
       }
@@ -639,9 +733,9 @@ class BracketExpressionTree {
         final aheadNumberString = NumberString(targetElementString.substring(0, innerInsertPos));
         final newOperator = _getOperator(inputChar);
         final followNumberString = NumberString(targetElementString.substring(innerInsertPos));
-        targetTree._updateNumberString(aheadNumberString, elementIndex);
         targetTree._addNumberString(followNumberString, elementIndex + 1);
         targetTree._addOperator(newOperator, elementIndex + 1);
+        targetTree._updateNumberString(aheadNumberString, elementIndex);
       } else if (targetElement is Operator) {
         // debugConsole("magicalInput11");
         // insert numberstring on the operator means the new numberstring adds.
@@ -667,9 +761,9 @@ class BracketExpressionTree {
         final targetElementString = targetElement.string;
         final aheadNumberString = NumberString(targetElementString.substring(0, innerInsertPos));
         final followNumberString = NumberString(targetElementString.substring(innerInsertPos));
-        targetTree._updateNumberString(aheadNumberString, elementIndex);
         targetTree._addNumberString(followNumberString, elementIndex + 1);
         targetTree._addTree(elementIndex + 1);
+        targetTree._updateNumberString(aheadNumberString, elementIndex);
       } else if (targetElement is Operator) {
         // debugConsole("magicalInput21");
         // insert Tree on the operator means the new numberstring adds.
@@ -754,10 +848,41 @@ class BracketExpressionTree {
     }
   }
 
+  /// create the top node tree that has only one child of NumberString.
+  /// this function dosen't check if numberString is representing the valid number.
   static BracketExpressionTree newNumericTree(String numberString) {
     var newTree = BracketExpressionTree();
     newTree.expComponentsList.add(NumberString(numberString));
     return newTree;
+  }
+
+  /// create the top node tree that has the :
+  /// [originalTree.evaluate(), originalTree's tail operator, originalTree's tail number]
+  ///
+  /// this function check if originalTree is representing the valid expression, and have the tail operator & number.
+  /// if invalid, return null.
+  static BracketExpressionTree? newHistoricalTree(BracketExpressionTree originalTree) {
+    if (originalTree._isExpressionInvalid == true) {
+      return null;
+    }
+
+    var newTree = newNumericTree(doubleToString(originalTree.evaluate()!));
+    for (int i = originalTree.expComponentsList.length - 1; i >= 0; i--) {
+      var targetElement = originalTree.expComponentsList[i];
+      if (targetElement is Operator) {
+        continue;
+      } else {
+        if (i > 1) {
+          newTree._expComponentsList.add(originalTree.expComponentsList[i - 1]);
+          newTree._expComponentsList.add(originalTree.expComponentsList[i]);
+          return newTree;
+        } else {
+          break;
+        }
+      }
+    }
+
+    return null;
   }
 
   // #endregion

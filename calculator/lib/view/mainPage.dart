@@ -66,6 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
   ScrollController resultScrollController = ScrollController();
 
   TextEditingController expressionTextController = TextEditingController();
+  FocusNode expressionFocusControll = FocusNode();
 
   // color collection
   Color ACBracketColor = Color.fromARGB(106, 92, 163, 221);
@@ -94,10 +95,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void onInvalidRequest(ExpFault fault) {
-    debugConsole("이러다 다 죽어~");
     String faultString;
     if (fault == ExpFault.abnormal) {
-      faultString = "계산 결과가 실수가 아닙니다. (0으로 나누는 식이 있나요?)";
+      faultString = "계산 결과가 실수가 아닙니다. (너무 큰 값을 곱하거나, 0으로 나누는 식이 있나요?)";
     } else {
       faultString = "올바르지 않은 수식입니다.";
     }
@@ -105,7 +105,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void onExpressionChanged(String calcManagerExp, int state) {
-    debugConsole(state);
+    // debugConsole(state);
     var select = expressionTextController.selection;
 
     var oldText = expressionTextController.text;
@@ -114,7 +114,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
     if (state == -1) {
       final diff = oldText.length - newText.length;
-      expressionTextController.selection = TextSelection(baseOffset: select.baseOffset - diff, extentOffset: select.extentOffset - diff);
+      String deleted = "";
+      if (select.baseOffset > 0) {
+        deleted = oldText[select.baseOffset - 1];
+      }
+
+      if (deleted == "(") {
+        expressionTextController.selection = TextSelection(baseOffset: select.baseOffset - 1, extentOffset: select.extentOffset - 1);
+      } else {
+        expressionTextController.selection = TextSelection(baseOffset: select.baseOffset - diff, extentOffset: select.extentOffset - diff);
+      }
     } else if (state == 0 || state == 2) {
       expressionTextController.selection = TextSelection(baseOffset: select.baseOffset + 1, extentOffset: select.extentOffset + 1);
     } else if (state == 1) {
@@ -144,7 +153,7 @@ class _MyHomePageState extends State<MyHomePage> {
             children: [
               Flexible(
                 flex: 1,
-                child: partLCD(calcManager.getResult(), expressionScrollController, resultScrollController, expressionTextController),
+                child: partLCD(calcManager.getResult(), expressionScrollController, resultScrollController, expressionTextController, expressionFocusControll),
               ),
               Flexible(flex: 2, child: Container(margin: EdgeInsets.all(10), child: partButton())),
             ],
@@ -157,7 +166,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget partLCD(String resultString, ScrollController expressionScrollController, ScrollController resultScrollController,
-      TextEditingController expressionTextController) {
+      TextEditingController expressionTextController, FocusNode expressionFocusControll) {
     return Column(
       children: [
         // the expression part
@@ -170,6 +179,7 @@ class _MyHomePageState extends State<MyHomePage> {
               child: TextField(
                 controller: expressionTextController,
                 scrollController: expressionScrollController,
+                focusNode: expressionFocusControll,
                 maxLines: null,
                 readOnly: true,
                 showCursor: true,
@@ -209,9 +219,10 @@ class _MyHomePageState extends State<MyHomePage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ExpandedOutlinedButton(
-            onPressed: () => {
-                  setState(() => {calcManager.initializeExpression()})
-                },
+            onPressed: () {
+              setState(() => {calcManager.initializeExpression()});
+              expressionFocusControll.unfocus();
+            },
             color: ACBracketColor,
             child: TextTemplet("AC")),
         ExpandedOutlinedButton(
@@ -261,9 +272,10 @@ class _MyHomePageState extends State<MyHomePage> {
             color: OperatorEqualColor,
             child: TextTemplet("+")),
         ExpandedOutlinedButton(
-            onPressed: () => {
-                  setState(() => {calcManager.expressionEquals()})
-                },
+            onPressed: () {
+              setState(() => {calcManager.expressionEquals()});
+              expressionFocusControll.unfocus();
+            },
             color: OperatorEqualColor,
             child: TextTemplet("=")),
       ],
