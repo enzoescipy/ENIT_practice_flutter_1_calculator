@@ -27,7 +27,7 @@ void debugConsole(dynamic debugParams) {
   log(" =>  " + outputString);
 }
 
-/// do the debugConsole() without trace.
+/// do the // debugConsole() without trace.
 void debugConsoleNoTrace(dynamic debugParams) {
   if (_debugOff) { return; }
   
@@ -49,5 +49,5 @@ void stopDebug() {
   _debugOff = true;
 }
 
-// class DebugConsole {
+// class // debugConsole {
 // }

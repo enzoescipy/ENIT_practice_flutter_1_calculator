@@ -337,7 +337,7 @@ class BracketExpressionTree {
   /// it means that if the tree has the children trees, they will not validated.
   /// instead, the mother(parent) tree will be requested to call her own validate() method.
   void validate() {
-    debugConsole(["validate iam : ", debugString()]);
+    // debugConsole(["validate iam : ", debugString()]);
     // first validate the parent.
     if (_mother != null) {
       _mother!.validate();

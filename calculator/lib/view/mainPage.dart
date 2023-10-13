@@ -262,7 +262,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 readOnly: true,
                 showCursor: true,
                 autofocus: true,
-                
                 style: TextStyle(fontSize: resizeFontWhenLonger(expressionTextController), fontFamily: "Tmoney", color: commonColor),
                 decoration: InputDecoration.collapsed(hintText: ""),
               ),
