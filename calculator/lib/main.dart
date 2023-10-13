@@ -8,7 +8,8 @@ import 'dart:developer';
 import 'package:calculator/library/debugConsole.dart';
 
 void main() {
-  // runApp(const MaterialApp(home: MyHomePage()));
+  // stopDebug();
+  runApp(MaterialApp(home: MyHomePage()));
   // DEBUG();
 }
 
@@ -23,9 +24,9 @@ void DEBUG() {
   String testString = tester3[0];
 
   for (int i = 0; i < testString.length; i++) {
-    debugConsoleNoTrace("");
-    debugConsoleNoTrace("   $i stage  ");
-    debugConsoleNoTrace("");
+    // debugConsoleNoTrace("");
+    // debugConsoleNoTrace("   $i stage  ");
+    // debugConsoleNoTrace("");
     var tester = testString[i];
     BracketExpressionTree.magicalInsert(testTree, i, tester);
   }
@@ -33,14 +34,14 @@ void DEBUG() {
   int start = testString.length + tester3[2] as int;
   testString = tester3[1];
   for (int i = 0; i < testString.length; i++) {
-    debugConsoleNoTrace("");
-    debugConsoleNoTrace("   $i stage  ");
-    debugConsoleNoTrace("");
+    // debugConsoleNoTrace("");
+    // debugConsoleNoTrace("   $i stage  ");
+    // debugConsoleNoTrace("");
     int index = start + i;
     var tester = testString[i];
     BracketExpressionTree.magicalInsert(testTree, index, tester);
   }
-  debugConsole(["tree toString", testTree.toString()]);
-  debugConsole(["tree length", testTree.length]);
-  debugConsole(["tree doubleValue", testTree.evaluate()]);
+  // debugConsole(["tree toString", testTree.toString()]);
+  // debugConsole(["tree length", testTree.length]);
+  // debugConsole(["tree doubleValue", testTree.evaluate()]);
 }

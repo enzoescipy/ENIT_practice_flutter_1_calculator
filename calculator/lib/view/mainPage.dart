@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:calculator/library/debugConsole.dart';
 import 'package:flutter/material.dart';
 import 'package:calculator/controller/calc_manager.dart';
 // import 'package:calculator/library/math_expression.dart';
@@ -8,13 +9,31 @@ import 'package:calculator/controller/calc_manager.dart';
 Widget ExpandedOutlinedButton({required void Function()? onPressed, required Widget child, required Color color}) {
   return Expanded(
       child: Container(
-    color: color,
     margin: EdgeInsets.all(5),
     child: OutlinedButton(
       child: child,
       onPressed: onPressed,
+      style: ButtonStyle(
+        backgroundColor: MaterialStateProperty.all(color),
+      ),
     ),
   ));
+}
+
+final commonColor = Color.fromARGB(255, 27, 35, 78);
+
+Widget TextTemplet(String data) {
+  return Text(
+    data,
+    style: TextStyle(fontSize: 30, color: commonColor, fontFamily: 'Tmoney'),
+  );
+}
+
+Widget IconTemplet(IconData icon) {
+  return Icon(
+    icon,
+    color: commonColor,
+  );
 }
 
 class MyHomePage extends StatefulWidget {
@@ -38,7 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Color specialColor = Color.fromARGB(161, 255, 64, 128);
   void randomColorMixer() {
     specialColor = Color.fromARGB(
-        (random.nextDouble() * 256) as int, (random.nextDouble() * 256) as int, (random.nextDouble() * 256) as int, (random.nextDouble() * 256) as int);
+        (random.nextDouble() * 256).toInt(), (random.nextDouble() * 256).toInt(), (random.nextDouble() * 256).toInt(), (random.nextDouble() * 256).toInt());
   }
 
   CalcManager calcManager = CalcManager();
@@ -59,11 +78,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
     expressionTextController.addListener(onExpressionTextSelectionChanged);
     calcManager.onExpressionChanged = onExpressionChanged;
-    randomColorMixer();
+    calcManager.onInvalidRequest = onInvalidRequest;
+    // randomColorMixer();
 
     //debug
     calcManager.debug();
-    // debugConsole(evaluateExpression("30.").toString());
+    // // debugConsole(evaluateExpression("30.").toString());
     //debug
   }
 
@@ -73,17 +93,32 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  void onExpressionChanged(String calcManagerExp) {
+  void onInvalidRequest(ExpFault fault) {
+    debugConsole("이러다 다 죽어~");
+    String faultString;
+    if (fault == ExpFault.abnormal) {
+      faultString = "계산 결과가 실수가 아닙니다. (0으로 나누는 식이 있나요?)";
+    } else {
+      faultString = "올바르지 않은 수식입니다.";
+    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(faultString)));
+  }
+
+  void onExpressionChanged(String calcManagerExp, int state) {
+    debugConsole(state);
     var select = expressionTextController.selection;
 
-    var text = expressionTextController.text;
+    var oldText = expressionTextController.text;
     var newText = calcManagerExp.replaceAll("/", "÷");
     expressionTextController.text = newText;
 
-    if (text.length > newText.length) {
-      expressionTextController.selection = TextSelection(baseOffset: select.baseOffset - 1, extentOffset: select.extentOffset - 1);
-    } else if (text.length < newText.length) {
+    if (state == -1) {
+      final diff = oldText.length - newText.length;
+      expressionTextController.selection = TextSelection(baseOffset: select.baseOffset - diff, extentOffset: select.extentOffset - diff);
+    } else if (state == 0 || state == 2) {
       expressionTextController.selection = TextSelection(baseOffset: select.baseOffset + 1, extentOffset: select.extentOffset + 1);
+    } else if (state == 1) {
+      expressionTextController.selection = TextSelection(baseOffset: newText.length, extentOffset: newText.length);
     } else {
       expressionTextController.selection = select;
     }
@@ -100,43 +135,48 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: const Text("Calculator"),
-        ),
-        body: Column(
-          children: [
-            Flexible(
-              flex: 1,
-              child:
-                  partLCD(calcManager.getExpression(), calcManager.getResult(), expressionScrollController, resultScrollController, expressionTextController),
-            ),
-            Flexible(flex: 2, child: Container(child: partButton())),
-          ],
-        )
-        // body: Column(
-        //   children: [partLCD(expressionTextController, resultTextController)],
-        // ),
-        );
+    return SafeArea(
+      child: Scaffold(
+          appBar: AppBar(
+            title: const Text("Calculator"),
+          ),
+          body: Column(
+            children: [
+              Flexible(
+                flex: 1,
+                child: partLCD(calcManager.getResult(), expressionScrollController, resultScrollController, expressionTextController),
+              ),
+              Flexible(flex: 2, child: Container(margin: EdgeInsets.all(10), child: partButton())),
+            ],
+          )
+          // body: Column(
+          //   children: [partLCD(expressionTextController, resultTextController)],
+          // ),
+          ),
+    );
   }
 
-  Widget partLCD(String expressionString, String resultString, ScrollController expressionScrollController, ScrollController resultScrollController,
+  Widget partLCD(String resultString, ScrollController expressionScrollController, ScrollController resultScrollController,
       TextEditingController expressionTextController) {
     return Column(
       children: [
         // the expression part
         Expanded(
           flex: 3,
-          child: Scrollbar(
-            controller: expressionScrollController,
-            child: TextField(
-              controller: expressionTextController,
-              scrollController: expressionScrollController,
-              maxLines: null,
-              readOnly: true,
-              showCursor: true,
-              style: TextStyle(fontSize: 40),
-              decoration: InputDecoration.collapsed(hintText: ""),
+          child: Container(
+            margin: const EdgeInsets.all(20),
+            child: Scrollbar(
+              controller: expressionScrollController,
+              child: TextField(
+                controller: expressionTextController,
+                scrollController: expressionScrollController,
+                maxLines: null,
+                readOnly: true,
+                showCursor: true,
+                autofocus: true,
+                style: TextStyle(fontSize: 40),
+                decoration: InputDecoration.collapsed(hintText: ""),
+              ),
             ),
           ),
         ),
@@ -173,13 +213,13 @@ class _MyHomePageState extends State<MyHomePage> {
                   setState(() => {calcManager.initializeExpression()})
                 },
             color: ACBracketColor,
-            child: Text("AC")),
+            child: TextTemplet("AC")),
         ExpandedOutlinedButton(
             onPressed: () => {
                   setState(() => {calcManager.addExpBracket()})
                 },
             color: ACBracketColor,
-            child: Text("()")),
+            child: TextTemplet("()")),
         ExpandedOutlinedButton(
             onPressed: () => {
                   setState(() => {randomColorMixer()})
@@ -188,6 +228,7 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Icon(
               Icons.bike_scooter,
               color: specialColor,
+              size: 40,
             )),
       ],
     );
@@ -200,31 +241,31 @@ class _MyHomePageState extends State<MyHomePage> {
                   setState(() => {calcManager.addExpDiv()})
                 },
             color: OperatorEqualColor,
-            child: Text("÷")),
+            child: TextTemplet("÷")),
         ExpandedOutlinedButton(
             onPressed: () => {
                   setState(() => {calcManager.addExpMul()})
                 },
             color: OperatorEqualColor,
-            child: Text("×")),
+            child: TextTemplet("×")),
         ExpandedOutlinedButton(
             onPressed: () => {
                   setState(() => {calcManager.addExpMinus()})
                 },
             color: OperatorEqualColor,
-            child: Icon(Icons.remove)),
+            child: TextTemplet("-")),
         ExpandedOutlinedButton(
             onPressed: () => {
                   setState(() => {calcManager.addExpPlus()})
                 },
             color: OperatorEqualColor,
-            child: Icon(Icons.add)),
+            child: TextTemplet("+")),
         ExpandedOutlinedButton(
             onPressed: () => {
                   setState(() => {calcManager.expressionEquals()})
                 },
             color: OperatorEqualColor,
-            child: Text("=")),
+            child: TextTemplet("=")),
       ],
     );
 
@@ -240,19 +281,19 @@ class _MyHomePageState extends State<MyHomePage> {
                       setState(() => {calcManager.addExp7()})
                     },
                 color: numpadDeleteColor,
-                child: Text("7")),
+                child: TextTemplet("7")),
             ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExp8()})
                     },
                 color: numpadDeleteColor,
-                child: Text("8")),
+                child: TextTemplet("8")),
             ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExp9()})
                     },
                 color: numpadDeleteColor,
-                child: Text("9")),
+                child: TextTemplet("9")),
           ],
         )),
         Flexible(
@@ -264,19 +305,19 @@ class _MyHomePageState extends State<MyHomePage> {
                       setState(() => {calcManager.addExp4()})
                     },
                 color: numpadDeleteColor,
-                child: Text("4")),
+                child: TextTemplet("4")),
             ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExp5()})
                     },
                 color: numpadDeleteColor,
-                child: Text("5")),
+                child: TextTemplet("5")),
             ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExp6()})
                     },
                 color: numpadDeleteColor,
-                child: Text("6")),
+                child: TextTemplet("6")),
           ],
         )),
         Flexible(
@@ -288,19 +329,19 @@ class _MyHomePageState extends State<MyHomePage> {
                       setState(() => {calcManager.addExp1()})
                     },
                 color: numpadDeleteColor,
-                child: Text("1")),
+                child: TextTemplet("1")),
             ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExp2()})
                     },
                 color: numpadDeleteColor,
-                child: Text("2")),
+                child: TextTemplet("2")),
             ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExp3()})
                     },
                 color: numpadDeleteColor,
-                child: Text("3")),
+                child: TextTemplet("3")),
           ],
         )),
         Flexible(
@@ -312,19 +353,19 @@ class _MyHomePageState extends State<MyHomePage> {
                       setState(() => {calcManager.addExp0()})
                     },
                 color: numpadDeleteColor,
-                child: Text("0")),
+                child: TextTemplet("0")),
             ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.addExpDot()})
                     },
                 color: numpadDeleteColor,
-                child: Text(".")),
+                child: TextTemplet(".")),
             ExpandedOutlinedButton(
                 onPressed: () => {
                       setState(() => {calcManager.deleteCharExpression()})
                     },
                 color: numpadDeleteColor,
-                child: Icon(Icons.backspace)),
+                child: IconTemplet(Icons.backspace)),
           ],
         ))
       ],

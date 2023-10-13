@@ -1,10 +1,14 @@
 import "dart:developer";
 
+bool _debugOff = false;
+
 /// show the inner elements of [debugParams] list.
 /// can be used to inspect the simple 1D list.
 ///
 /// however, if [debugParams] not list, just log the stringified value.
 void debugConsole(dynamic debugParams) {
+  if (_debugOff) { return; }
+
   String outputString = "";
   if (debugParams is List) {
     debugParams.forEach((element) {
@@ -23,7 +27,10 @@ void debugConsole(dynamic debugParams) {
   log(" =>  " + outputString);
 }
 
+/// do the debugConsole() without trace.
 void debugConsoleNoTrace(dynamic debugParams) {
+  if (_debugOff) { return; }
+  
   String outputString = "";
   if (debugParams is List) {
     debugParams.forEach((element) {
@@ -35,6 +42,11 @@ void debugConsoleNoTrace(dynamic debugParams) {
   }
 
   log(outputString);
+}
+
+/// call this function to stop print the debugging permanently
+void stopDebug() {
+  _debugOff = true;
 }
 
 // class DebugConsole {
