@@ -12,13 +12,13 @@ import 'package:flutter_simple_calculator/flutter_simple_calculator.dart';
 Widget ExpandedOutlinedButton({required void Function()? onPressed, required Widget child, required Color color}) {
   return Expanded(
       child: Container(
-    margin: EdgeInsets.all(5),
+    margin: const EdgeInsets.all(5),
     child: OutlinedButton(
-      child: child,
       onPressed: onPressed,
       style: ButtonStyle(
           backgroundColor: MaterialStateProperty.all(color),
           shape: MaterialStateProperty.all(const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(15))))),
+      child: child,
     ),
   ));
 }
@@ -63,12 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void randomColorMixer() {
-    specialColorARGB = [
-      255,
-      (random.nextDouble() * 256).toInt(),
-      (random.nextDouble() * 256).toInt(),
-      (random.nextDouble() * 256).toInt()
-    ];
+    specialColorARGB = [255, (random.nextDouble() * 256).toInt(), (random.nextDouble() * 256).toInt(), (random.nextDouble() * 256).toInt()];
   }
 
   CalcManager calcManager = CalcManager();
@@ -211,27 +206,23 @@ class _MyHomePageState extends State<MyHomePage> {
           //   title: const Text("Calculator"),
           // ),
           body: Container(
-            margin: const EdgeInsets.fromLTRB(0, 20, 0, 20),
-            child: Column(
-              children: [
-                Flexible(
-                  flex: 1,
-                  child: Container(
-                    margin: const EdgeInsets.fromLTRB(15, 10, 15, 5),
-                    padding: EdgeInsets.zero,
-                    alignment: Alignment.bottomCenter,
-                    child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                            color: Colors.blueGrey[100],
-                            child: partLCD(
-                                calcManager.getResult(), expressionScrollController, resultScrollController, expressionTextController, expressionFocusControll))),
-                  ),
+        margin: const EdgeInsets.fromLTRB(0, 20, 0, 20),
+        child: Column(
+          children: [
+            Container(
+                height: 250,
+                margin: const EdgeInsets.fromLTRB(15, 10, 15, 5),
+                padding: EdgeInsets.zero,
+                alignment: Alignment.bottomCenter,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.blueGrey[100],
                 ),
-                Flexible(flex: 2, child: Container(margin: const EdgeInsets.fromLTRB(15, 5, 15, 20), alignment: Alignment.bottomCenter, child: partButton())),
-              ],
-            ),
-          )
+                child: partLCD(calcManager.getResult(), expressionScrollController, resultScrollController, expressionTextController, expressionFocusControll)),
+            Flexible(flex: 2, child: Container(margin: const EdgeInsets.fromLTRB(15, 5, 15, 20), alignment: Alignment.bottomCenter, child: partButton())),
+          ],
+        ),
+      )
           // body: Column(
           //   children: [partLCD(expressionTextController, resultTextController)],
           // ),
@@ -266,31 +257,29 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
         // the result part
-        Expanded(
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(7, 0, 7, 7),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  color: Colors.blueGrey[200],
-                  alignment: Alignment.bottomCenter,
-                  child: Scrollbar(
-                        scrollbarOrientation: ScrollbarOrientation.bottom,
-                        controller: resultScrollController,
-                        child: SingleChildScrollView(
-                  controller: resultScrollController,
-                  scrollDirection: Axis.horizontal,
-                  child: SelectableText(
-                    resultString,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 25, fontFamily: "Tmoney", color: commonColor.withAlpha(100)),
-                    showCursor: true,
-                  ),
-                        ),
-                      ),
-                ),
+        Container(
+          padding: const EdgeInsets.fromLTRB(0, 3, 0, 3),
+          margin: const EdgeInsets.fromLTRB(7, 0, 7, 0),
+          alignment: Alignment.bottomCenter,
+          decoration: BoxDecoration(
+            color: Colors.blueGrey[200],
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Scrollbar(
+            scrollbarOrientation: ScrollbarOrientation.bottom,
+            controller: resultScrollController,
+            child: SingleChildScrollView(
+              controller: resultScrollController,
+              scrollDirection: Axis.horizontal,
+              child: SelectableText(
+                resultString,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 25, fontFamily: "Tmoney", color: commonColor.withAlpha(100)),
+                showCursor: true,
               ),
-            )),
+            ),
+          ),
+        ),
       ],
     );
   }
