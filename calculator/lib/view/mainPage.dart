@@ -15,8 +15,8 @@ Widget ExpandedOutlinedButton({required void Function()? onPressed, required Wid
       child: child,
       onPressed: onPressed,
       style: ButtonStyle(
-        backgroundColor: MaterialStateProperty.all(color),
-      ),
+          backgroundColor: MaterialStateProperty.all(color),
+          shape: MaterialStateProperty.all(const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(15))))),
     ),
   ));
 }
@@ -133,6 +133,35 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
+  final step = 7;
+  final reduce = 10;
+  final minimum = 50;
+  final scrollConvert = 60;
+  final original = 80;
+
+  /// guide the proper fontSize by given editor.text.length
+  /// also convert the scroll direction if longer, too.
+  double resizeFontWhenLonger(TextEditingController editor) {
+    final currentLength = editor.text.length;
+    int newFontSize = original;
+    for (int count = 0; count < currentLength ~/ step; count++) {
+      newFontSize -= reduce;
+      if (newFontSize <= minimum) {
+        break;
+      }
+    }
+    return newFontSize.toDouble();
+  }
+
+  int? reAxisWhenLonger(TextEditingController editor) {
+    final currentLength = editor.text.length;
+    final newFontSize = resizeFontWhenLonger(editor);
+    if (newFontSize <= scrollConvert) {
+      return null;
+    }
+    return 1;
+  }
+
   void onInvalidRequest(ExpFault fault) {
     String faultString;
     if (fault == ExpFault.abnormal) {
@@ -148,7 +177,7 @@ class _MyHomePageState extends State<MyHomePage> {
     var select = expressionTextController.selection;
 
     var oldText = expressionTextController.text;
-    var newText = calcManagerExp.replaceAll("/", "÷");
+    var newText = calcManagerExp.replaceAll("/", "÷").replaceAll("*", "×");
     expressionTextController.text = newText;
 
     if (state == -1) {
@@ -193,17 +222,18 @@ class _MyHomePageState extends State<MyHomePage> {
               Flexible(
                 flex: 1,
                 child: Container(
-                  margin: EdgeInsets.fromLTRB(15, 10, 15, 10),
+                  margin: EdgeInsets.fromLTRB(15, 10, 15, 5),
                   padding: EdgeInsets.zero,
+                  alignment: Alignment.bottomCenter,
                   child: ClipRRect(
                       borderRadius: BorderRadius.circular(20),
                       child: Container(
-                          color: Colors.blueGrey[50],
+                          color: Colors.blueGrey[100],
                           child: partLCD(
                               calcManager.getResult(), expressionScrollController, resultScrollController, expressionTextController, expressionFocusControll))),
                 ),
               ),
-              Flexible(flex: 2, child: Container(margin: EdgeInsets.all(15), child: partButton())),
+              Flexible(flex: 2, child: Container(margin: EdgeInsets.fromLTRB(15, 5, 15, 20), alignment: Alignment.bottomCenter, child: partButton())),
             ],
           )
           // body: Column(
@@ -218,8 +248,8 @@ class _MyHomePageState extends State<MyHomePage> {
     return Column(
       children: [
         // the expression part
-        Expanded(
-          flex: 3,
+        SizedBox(
+          height: 200,
           child: Container(
             margin: const EdgeInsets.all(20),
             child: Scrollbar(
@@ -228,11 +258,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 controller: expressionTextController,
                 scrollController: expressionScrollController,
                 focusNode: expressionFocusControll,
-                maxLines: null,
+                maxLines: reAxisWhenLonger(expressionTextController),
                 readOnly: true,
                 showCursor: true,
                 autofocus: true,
-                style: TextStyle(fontSize: 40, fontFamily: "Tmoney", color: commonColor),
+                
+                style: TextStyle(fontSize: resizeFontWhenLonger(expressionTextController), fontFamily: "Tmoney", color: commonColor),
                 decoration: InputDecoration.collapsed(hintText: ""),
               ),
             ),
@@ -240,24 +271,23 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         // the result part
         Expanded(
-            flex: 1,
             child: Scrollbar(
-              scrollbarOrientation: ScrollbarOrientation.bottom,
-              controller: resultScrollController,
-              child: SingleChildScrollView(
-                controller: resultScrollController,
-                scrollDirection: Axis.horizontal,
-                child: Container(
-                  // color: Colors.red,
-                  child: SelectableText(
-                    resultString,
-                    textAlign: TextAlign.right,
-                    style: TextStyle(fontSize: 20, fontFamily: "Tmoney", color: commonColor.withAlpha(100)),
-                    showCursor: true,
-                  ),
-                ),
+          scrollbarOrientation: ScrollbarOrientation.bottom,
+          controller: resultScrollController,
+          child: SingleChildScrollView(
+            controller: resultScrollController,
+            scrollDirection: Axis.horizontal,
+            child: Container(
+              // color: Colors.red,
+              child: SelectableText(
+                resultString,
+                textAlign: TextAlign.right,
+                style: TextStyle(fontSize: 25, fontFamily: "Tmoney", color: commonColor.withAlpha(100)),
+                showCursor: true,
               ),
-            )),
+            ),
+          ),
+        )),
       ],
     );
   }
