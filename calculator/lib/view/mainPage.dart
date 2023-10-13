@@ -1,6 +1,8 @@
+// ignore_for_file: non_constant_identifier_names
+
 import 'dart:math';
 
-import 'package:calculator/library/debugConsole.dart';
+// import 'package:calculator/library/debugConsole.dart';
 import 'package:flutter/material.dart';
 import 'package:calculator/controller/calc_manager.dart';
 import 'package:flutter_simple_calculator/flutter_simple_calculator.dart';
@@ -21,7 +23,7 @@ Widget ExpandedOutlinedButton({required void Function()? onPressed, required Wid
   ));
 }
 
-final commonColor = Color.fromARGB(255, 27, 35, 78);
+var commonColor = const Color.fromARGB(255, 27, 35, 78);
 
 Widget TextTemplet(String data) {
   return Text(
@@ -62,7 +64,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void randomColorMixer() {
     specialColorARGB = [
-      (random.nextDouble() * 256).toInt(),
+      255,
       (random.nextDouble() * 256).toInt(),
       (random.nextDouble() * 256).toInt(),
       (random.nextDouble() * 256).toInt()
@@ -78,9 +80,9 @@ class _MyHomePageState extends State<MyHomePage> {
   FocusNode expressionFocusControll = FocusNode();
 
   // color collection
-  Color ACBracketColor = Color.fromARGB(106, 92, 163, 221);
-  Color numpadDeleteColor = Color.fromARGB(120, 110, 207, 131);
-  Color OperatorEqualColor = Color.fromARGB(108, 255, 226, 250);
+  Color ACBracketColor = const Color.fromARGB(106, 92, 163, 221);
+  Color numpadDeleteColor = const Color.fromARGB(120, 110, 207, 131);
+  Color OperatorEqualColor = const Color.fromARGB(108, 255, 226, 250);
 
   /// funny prebuilt flutter calculator widget
   void openPrebuiltCalculator() {
@@ -92,15 +94,15 @@ class _MyHomePageState extends State<MyHomePage> {
         borderColor: Colors.black,
         borderWidth: 2,
         displayColor: Colors.black,
-        displayStyle: TextStyle(fontSize: 80, color: Colors.white),
+        displayStyle: const TextStyle(fontSize: 80, color: Colors.white),
         expressionColor: Color.fromARGB(150, specialColorARGB[1], specialColorARGB[2], specialColorARGB[3]),
-        expressionStyle: TextStyle(fontSize: 20, color: Colors.white),
+        expressionStyle: const TextStyle(fontSize: 20, color: Colors.white),
         operatorColor: Color.fromARGB(100, specialColorARGB[1], specialColorARGB[2], specialColorARGB[3]),
-        operatorStyle: TextStyle(fontSize: 30, color: Colors.white),
+        operatorStyle: const TextStyle(fontSize: 30, color: Colors.white),
         commandColor: Color.fromARGB(200, specialColorARGB[1], specialColorARGB[2], specialColorARGB[3]),
-        commandStyle: TextStyle(fontSize: 30, color: Colors.white),
+        commandStyle: const TextStyle(fontSize: 30, color: Colors.white),
         numColor: Color.fromARGB(255, specialColorARGB[1], specialColorARGB[2], specialColorARGB[3]),
-        numStyle: TextStyle(fontSize: 50, color: Colors.white),
+        numStyle: const TextStyle(fontSize: 50, color: Colors.white),
       ),
     );
 
@@ -151,15 +153,6 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
     return newFontSize.toDouble();
-  }
-
-  int? reAxisWhenLonger(TextEditingController editor) {
-    final currentLength = editor.text.length;
-    final newFontSize = resizeFontWhenLonger(editor);
-    if (newFontSize <= scrollConvert) {
-      return null;
-    }
-    return 1;
   }
 
   void onInvalidRequest(ExpFault fault) {
@@ -214,27 +207,30 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-          appBar: AppBar(
-            title: const Text("Calculator"),
-          ),
-          body: Column(
-            children: [
-              Flexible(
-                flex: 1,
-                child: Container(
-                  margin: EdgeInsets.fromLTRB(15, 10, 15, 5),
-                  padding: EdgeInsets.zero,
-                  alignment: Alignment.bottomCenter,
-                  child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                          color: Colors.blueGrey[100],
-                          child: partLCD(
-                              calcManager.getResult(), expressionScrollController, resultScrollController, expressionTextController, expressionFocusControll))),
+          // appBar: AppBar(
+          //   title: const Text("Calculator"),
+          // ),
+          body: Container(
+            margin: const EdgeInsets.fromLTRB(0, 20, 0, 20),
+            child: Column(
+              children: [
+                Flexible(
+                  flex: 1,
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(15, 10, 15, 5),
+                    padding: EdgeInsets.zero,
+                    alignment: Alignment.bottomCenter,
+                    child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                            color: Colors.blueGrey[100],
+                            child: partLCD(
+                                calcManager.getResult(), expressionScrollController, resultScrollController, expressionTextController, expressionFocusControll))),
+                  ),
                 ),
-              ),
-              Flexible(flex: 2, child: Container(margin: EdgeInsets.fromLTRB(15, 5, 15, 20), alignment: Alignment.bottomCenter, child: partButton())),
-            ],
+                Flexible(flex: 2, child: Container(margin: const EdgeInsets.fromLTRB(15, 5, 15, 20), alignment: Alignment.bottomCenter, child: partButton())),
+              ],
+            ),
           )
           // body: Column(
           //   children: [partLCD(expressionTextController, resultTextController)],
@@ -246,6 +242,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget partLCD(String resultString, ScrollController expressionScrollController, ScrollController resultScrollController,
       TextEditingController expressionTextController, FocusNode expressionFocusControll) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // the expression part
         SizedBox(
@@ -258,35 +255,42 @@ class _MyHomePageState extends State<MyHomePage> {
                 controller: expressionTextController,
                 scrollController: expressionScrollController,
                 focusNode: expressionFocusControll,
-                maxLines: reAxisWhenLonger(expressionTextController),
+                maxLines: null,
                 readOnly: true,
                 showCursor: true,
                 autofocus: true,
                 style: TextStyle(fontSize: resizeFontWhenLonger(expressionTextController), fontFamily: "Tmoney", color: commonColor),
-                decoration: InputDecoration.collapsed(hintText: ""),
+                decoration: const InputDecoration.collapsed(hintText: ""),
               ),
             ),
           ),
         ),
         // the result part
         Expanded(
-            child: Scrollbar(
-          scrollbarOrientation: ScrollbarOrientation.bottom,
-          controller: resultScrollController,
-          child: SingleChildScrollView(
-            controller: resultScrollController,
-            scrollDirection: Axis.horizontal,
             child: Container(
-              // color: Colors.red,
-              child: SelectableText(
-                resultString,
-                textAlign: TextAlign.right,
-                style: TextStyle(fontSize: 25, fontFamily: "Tmoney", color: commonColor.withAlpha(100)),
-                showCursor: true,
+              padding: const EdgeInsets.fromLTRB(7, 0, 7, 7),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  color: Colors.blueGrey[200],
+                  alignment: Alignment.bottomCenter,
+                  child: Scrollbar(
+                        scrollbarOrientation: ScrollbarOrientation.bottom,
+                        controller: resultScrollController,
+                        child: SingleChildScrollView(
+                  controller: resultScrollController,
+                  scrollDirection: Axis.horizontal,
+                  child: SelectableText(
+                    resultString,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 25, fontFamily: "Tmoney", color: commonColor.withAlpha(100)),
+                    showCursor: true,
+                  ),
+                        ),
+                      ),
+                ),
               ),
-            ),
-          ),
-        )),
+            )),
       ],
     );
   }

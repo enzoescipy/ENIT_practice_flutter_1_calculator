@@ -1,7 +1,4 @@
-import 'dart:developer';
-import 'package:flutter/material.dart';
-import 'package:calculator/library/debugConsole.dart';
-import '../library/list_stringify.dart';
+// import 'package:calculator/library/debugConsole.dart';
 
 class NotAllowedValueError implements Exception {
   final String? msg;
@@ -52,7 +49,7 @@ class NumberString {
   final String string;
   double? number;
   NumberString(this.string) {
-    this.number = double.tryParse(string);
+    number = double.tryParse(string);
   }
 }
 
