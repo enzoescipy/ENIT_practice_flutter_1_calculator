@@ -1,5 +1,10 @@
 // import 'package:calculator/library/debugConsole.dart';
 
+import 'package:calculator/controller/calc_manager.dart';
+import 'package:calculator/library/debugConsole.dart';
+
+enum ExpFault { invalid, abnormal, tooLongDigit }
+
 class NotAllowedValueError implements Exception {
   final String? msg;
 
@@ -47,14 +52,74 @@ Operator _getOperator(String inputChar) {
 /// this class's instance string is immutable.
 class NumberString {
   final String string;
-  double? number;
+  static final maxInputDigit = 12;
+  double? _number;
+  ExpFault? _faulty;
+
   NumberString(this.string) {
-    number = double.tryParse(string);
+    final exponantIndex = string.indexOf("e");
+    final pureDigitString = exponantIndex != -1 ? string.substring(0, exponantIndex) : string;
+
+    // count the ONLY digit length
+    int pureDigitLength = 0;
+    bool isZeroContinued = true;
+    for (int i = pureDigitString.length - 1; i >= 0; i--) {
+      String target = pureDigitString[i];
+      if (isZeroContinued == true) {
+        if (target == "0") {
+          continue;
+        } else {
+          isZeroContinued = false;
+        }
+      }
+      if (target == ".") {
+        pureDigitLength += i;
+        break;
+      }
+      pureDigitLength++;
+    }
+    // debugConsole([string, pureDigitLength]);
+
+    if (pureDigitLength > maxInputDigit) {
+      _faulty = ExpFault.tooLongDigit;
+      _number = null;
+      return;
+    }
+    _number = double.tryParse(string);
+    if (_number == null) {
+      _faulty = ExpFault.invalid;
+    } else if (_number!.isInfinite || _number!.isNaN) {
+      _faulty = ExpFault.abnormal;
+    } else {
+      _faulty = null;
+    }
+  }
+
+  double? get number {
+    return _number;
+  }
+
+  ExpFault? get faulty {
+    return _faulty;
   }
 }
 
 String doubleToString(double number) {
-  return number.toString();
+  var numberToString = number.toString();
+
+  // controls the length of the string
+  if (numberToString.length >= NumberString.maxInputDigit) {
+    numberToString = number.toStringAsPrecision(NumberString.maxInputDigit);
+  }
+
+  // removes the ".0" part of the string
+  final splitedNumber = numberToString.split(".");
+  if (splitedNumber.length == 2 && splitedNumber[1] == "0") {
+    numberToString = splitedNumber[0];
+  }
+
+  // debugConsole(["normal", numberToString]);
+  return numberToString;
 }
 
 class BracketExpressionTree {
@@ -80,6 +145,11 @@ class BracketExpressionTree {
     } else {
       throw Exception("BracketExpressionTree.mother : top node of tree cannot get its mother.");
     }
+  }
+
+  void _initialize() {
+    _expComponentsList.clear();
+    _isExpressionInvalid = true;
   }
 
   /// new the Tree and place it inside the this._expComponentsList at [index].
@@ -225,11 +295,13 @@ class BracketExpressionTree {
     }
 
     // check if the new value is not the abnormal NumberString value.
-    if (newNumber.number == null || newNumber.number!.isNaN || newNumber.number!.isInfinite) {
+    if (newNumber.faulty == ExpFault.invalid || newNumber.faulty == ExpFault.abnormal) {
       // just delete quietly.
       _deleteNumberString(index);
       return;
-      // throw NotAllowedValueError("BracketExpressionTree._updateNumberString : abnormal number value (eg. nan, inf, invalid expression) is now allowed.");
+    } else if (newNumber.faulty == ExpFault.tooLongDigit) {
+      throw NotAllowedValueError(
+          "BracketExpressionTree._updateNumberString : faulty number value (eg. nan, inf, invalid expression, too long digit) is now allowed.");
     }
 
     // change operator to the current compList. then validate the current Tree.
@@ -265,10 +337,6 @@ class BracketExpressionTree {
   // #endregion
 
   // #region override primative functuation
-
-  static String doubleToString(double number) {
-    return number.toString();
-  }
 
   @override
   String toString() {
@@ -847,10 +915,9 @@ class BracketExpressionTree {
 
   /// create the top node tree that has only one child of NumberString.
   /// this function dosen't check if numberString is representing the valid number.
-  static BracketExpressionTree newNumericTree(String numberString) {
-    var newTree = BracketExpressionTree();
-    newTree.expComponentsList.add(NumberString(numberString));
-    return newTree;
+  static void intializeWithnumber(NumberString numberString, BracketExpressionTree targetTree) {
+    targetTree._initialize();
+    targetTree._expComponentsList.add((numberString));
   }
 
   /// create the top node tree that has the :
@@ -862,44 +929,55 @@ class BracketExpressionTree {
     if (originalTree._isExpressionInvalid == true) {
       return null;
     }
+    var originalValue = originalTree.evaluate();
+    if (originalValue == null) {
+      return null;
+    }
 
-    var newTree = newNumericTree(doubleToString(originalTree.evaluate()!));
+    List newExpComponentsList = [NumberString(doubleToString(originalValue))];
     for (int i = originalTree.expComponentsList.length - 1; i >= 0; i--) {
       var targetElement = originalTree.expComponentsList[i];
       if (targetElement is Operator) {
         continue;
       } else {
         if (i > 1) {
-          newTree._expComponentsList.add(originalTree.expComponentsList[i - 1]);
-          newTree._expComponentsList.add(originalTree.expComponentsList[i]);
-          return newTree;
-        } else {
+          newExpComponentsList.add(originalTree.expComponentsList[i - 1]);
+          newExpComponentsList.add(originalTree.expComponentsList[i]);
           break;
+        } else {
+          return null;
         }
       }
     }
 
-    return null;
+    var newTree = BracketExpressionTree();
+    newTree._expComponentsList = newExpComponentsList;
+    return newTree;
+  }
+
+  /// rebuild the top node tree that has the :
+  /// [originalTree.evaluate(), originalTree's tail operator, originalTree's tail number]
+  /// with the historical tree.
+  ///
+  /// this function reguards that the originalTree was created by BracketExpressionTree.newHistoricalTree().
+  static void initializeHistoricalTree(BracketExpressionTree historyTree, {NumberString? initializeValue}) {
+    if (historyTree._isExpressionInvalid == true) {
+      return;
+    }
+
+    if (initializeValue == null) {
+      final originalValue = historyTree.evaluate();
+      if (originalValue == null || originalValue.isNaN) {
+        return;
+      }
+      initializeValue = NumberString(doubleToString(originalValue));
+    }
+
+    // debugConsole([originalValue, doubleToString(originalValue), NumberString(doubleToString(originalValue)).number]);
+    historyTree._expComponentsList[0] = initializeValue;
   }
 
   // #endregion
-
-  /// print the noBracketExpression and the children list.
-  void debugLogSelf() {
-    // debugConsole("current number list : ");
-    // debugConsole("[");
-    _expComponentsList.forEach((comp) {
-      if (comp is BracketExpressionTree) {
-        comp.debugLogSelf();
-        // debugConsole(",");
-      } else if (comp is Operator) {
-        // debugConsole(comp.string);
-      } else {
-        // debugConsole(doubleToString(comp));
-      }
-    });
-    // debugConsole("]");
-  }
 
   String debugString() {
     String mystring = "[";

@@ -3,9 +3,11 @@
 import 'dart:math';
 
 // import 'package:calculator/library/debugConsole.dart';
+import 'package:calculator/library/debugConsole.dart';
 import 'package:flutter/material.dart';
 import 'package:calculator/controller/calc_manager.dart';
 import 'package:flutter_simple_calculator/flutter_simple_calculator.dart';
+import 'package:calculator/library/math_expression.dart';
 // import 'package:calculator/library/math_expression.dart';
 // import 'dart:developer';
 
@@ -58,8 +60,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final random = Random.secure();
   List<int> specialColorARGB = [161, 255, 64, 128];
-  Color getSpecialColor() {
-    return Color.fromARGB(specialColorARGB[0], specialColorARGB[1], specialColorARGB[2], specialColorARGB[3]);
+  Color getSpecialColor(int opeacity) {
+    return Color.fromARGB(opeacity, specialColorARGB[1], specialColorARGB[2], specialColorARGB[3]);
   }
 
   void randomColorMixer() {
@@ -81,7 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   /// funny prebuilt flutter calculator widget
   void openPrebuiltCalculator() {
-    var calc = SimpleCalculator(
+    final calc = SimpleCalculator(
       hideExpression: false,
       hideSurroundingBorder: true,
       autofocus: true,
@@ -90,13 +92,13 @@ class _MyHomePageState extends State<MyHomePage> {
         borderWidth: 2,
         displayColor: Colors.black,
         displayStyle: const TextStyle(fontSize: 80, color: Colors.white),
-        expressionColor: Color.fromARGB(150, specialColorARGB[1], specialColorARGB[2], specialColorARGB[3]),
+        expressionColor: getSpecialColor(150),
         expressionStyle: const TextStyle(fontSize: 20, color: Colors.white),
-        operatorColor: Color.fromARGB(100, specialColorARGB[1], specialColorARGB[2], specialColorARGB[3]),
+        operatorColor: getSpecialColor(100),
         operatorStyle: const TextStyle(fontSize: 30, color: Colors.white),
-        commandColor: Color.fromARGB(200, specialColorARGB[1], specialColorARGB[2], specialColorARGB[3]),
+        commandColor: getSpecialColor(200),
         commandStyle: const TextStyle(fontSize: 30, color: Colors.white),
-        numColor: Color.fromARGB(255, specialColorARGB[1], specialColorARGB[2], specialColorARGB[3]),
+        numColor: getSpecialColor(255),
         numStyle: const TextStyle(fontSize: 50, color: Colors.white),
       ),
     );
@@ -154,8 +156,10 @@ class _MyHomePageState extends State<MyHomePage> {
     String faultString;
     if (fault == ExpFault.abnormal) {
       faultString = "계산 결과가 실수가 아닙니다. (너무 큰 값을 곱하거나, 0으로 나누는 식이 있나요?)";
-    } else {
+    } else if (fault == ExpFault.invalid) {
       faultString = "올바르지 않은 수식입니다.";
+    } else {
+      faultString = "입력 가능한 최대 자릿수는 ${NumberString.maxInputDigit} 자리입니다.";
     }
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(faultString)));
   }
@@ -311,7 +315,7 @@ class _MyHomePageState extends State<MyHomePage> {
             color: ACBracketColor,
             child: Icon(
               Icons.bike_scooter,
-              color: getSpecialColor(),
+              color: getSpecialColor(255),
               size: 40,
             )),
       ],

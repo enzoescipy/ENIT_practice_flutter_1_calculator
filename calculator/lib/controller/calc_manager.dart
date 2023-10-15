@@ -4,8 +4,6 @@ import 'dart:developer';
 import 'package:calculator/library/debugConsole.dart';
 import 'package:calculator/library/math_expression.dart';
 
-enum ExpFault { invalid, abnormal }
-
 class CalcManager {
   BracketExpressionTree _BETree = BracketExpressionTree();
 
@@ -47,7 +45,7 @@ class CalcManager {
   /// get the result from the manager.
   String getResult() {
     if (_result != null) {
-      return _result.toString();
+      return doubleToString(_result!);
     } else {
       return "";
     }
@@ -104,8 +102,9 @@ class CalcManager {
       BracketExpressionTree.magicalInsert(_BETree, cursor, inputChar);
     } on NotAllowedValueError {
       if (onInvalidRequest != null) {
-        onInvalidRequest!(ExpFault.invalid);
+        onInvalidRequest!(ExpFault.tooLongDigit);
       }
+      return;
     }
     _calculate();
     _historyTree = null;
@@ -233,7 +232,7 @@ class CalcManager {
     _historyTree = BracketExpressionTree.newHistoricalTree(_BETree);
 
     // initialize the BETree
-    _BETree = BracketExpressionTree.newNumericTree(doubleToString(_result!));
+    BracketExpressionTree.intializeWithnumber(NumberString(doubleToString(_result!)), _BETree);
 
     if (onExpressionChanged != null) {
       onExpressionChanged!(_BETree.toString(), 1);
@@ -248,6 +247,8 @@ class CalcManager {
     if (_historyTree == null) {
       return;
     }
+    // debugConsole([_historyTree!.expComponentsList[0].string, _historyTree!.expComponentsList[1], _historyTree!.expComponentsList[2].string]);
+    // debugConsole([_historyTree!.expComponentsList[0].number, _historyTree!.expComponentsList[1], _historyTree!.expComponentsList[2].number]);
     _historyTree!.validate();
     double? evaluateResult = _historyTree!.evaluate();
     if (evaluateResult == null) {
@@ -261,13 +262,12 @@ class CalcManager {
       }
       return;
     }
-
-    // debugConsole([evaluateResult, _historyTree]);
-
+    final evaluateNumberString = NumberString(doubleToString(evaluateResult));
+    // debugConsole([evalResultToString, NumberString(evalResultToString).number]);
     _result = evaluateResult;
-    _BETree = BracketExpressionTree.newNumericTree(doubleToString(evaluateResult));
+    BracketExpressionTree.intializeWithnumber(evaluateNumberString, _BETree);
 
-    _historyTree = BracketExpressionTree.newHistoricalTree(_historyTree!);
+    BracketExpressionTree.initializeHistoricalTree(_historyTree!, initializeValue: evaluateNumberString);
 
     if (onExpressionChanged != null) {
       onExpressionChanged!(_BETree.toString(), 1);
