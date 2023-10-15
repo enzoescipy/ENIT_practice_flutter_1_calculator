@@ -247,10 +247,11 @@ class CalcManager {
     if (_historyTree == null) {
       return;
     }
-    // debugConsole([_historyTree!.expComponentsList[0].string, _historyTree!.expComponentsList[1], _historyTree!.expComponentsList[2].string]);
-    // debugConsole([_historyTree!.expComponentsList[0].number, _historyTree!.expComponentsList[1], _historyTree!.expComponentsList[2].number]);
+    debugConsole([_historyTree!.expComponentsList[0].string, _historyTree!.expComponentsList[1], _historyTree!.expComponentsList[2].string]);
+    debugConsole([_historyTree!.expComponentsList[0].number, _historyTree!.expComponentsList[1], _historyTree!.expComponentsList[2].number]);
     _historyTree!.validate();
     double? evaluateResult = _historyTree!.evaluate();
+    debugConsole([evaluateResult]);
     if (evaluateResult == null) {
       if (onInvalidRequest != null) {
         onInvalidRequest!(ExpFault.invalid);
@@ -263,7 +264,7 @@ class CalcManager {
       return;
     }
     final evaluateNumberString = NumberString(doubleToString(evaluateResult));
-    // debugConsole([evalResultToString, NumberString(evalResultToString).number]);
+    debugConsole([evaluateNumberString.number]);
     _result = evaluateResult;
     BracketExpressionTree.intializeWithnumber(evaluateNumberString, _BETree);
 

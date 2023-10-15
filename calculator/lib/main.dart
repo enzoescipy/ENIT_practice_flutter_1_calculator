@@ -8,7 +8,7 @@ import 'dart:developer';
 import 'package:calculator/library/debugConsole.dart';
 
 void main() {
-  // enableDebug();
+  enableDebug();
   // enableCount();
   runApp(MaterialApp(home: MyHomePage()));
   // DEBUG();

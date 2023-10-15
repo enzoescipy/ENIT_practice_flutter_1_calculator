@@ -57,30 +57,7 @@ class NumberString {
   ExpFault? _faulty;
 
   NumberString(this.string) {
-    final exponantIndex = string.indexOf("e");
-    final pureDigitString = exponantIndex != -1 ? string.substring(0, exponantIndex) : string;
-
-    // count the ONLY digit length
-    int pureDigitLength = 0;
-    bool isZeroContinued = true;
-    for (int i = pureDigitString.length - 1; i >= 0; i--) {
-      String target = pureDigitString[i];
-      if (isZeroContinued == true) {
-        if (target == "0") {
-          continue;
-        } else {
-          isZeroContinued = false;
-        }
-      }
-      if (target == ".") {
-        pureDigitLength += i;
-        break;
-      }
-      pureDigitLength++;
-    }
-    // debugConsole([string, pureDigitLength]);
-
-    if (pureDigitLength > maxInputDigit) {
+    if (string.length > maxInputDigit) {
       _faulty = ExpFault.tooLongDigit;
       _number = null;
       return;
@@ -107,18 +84,25 @@ class NumberString {
 String doubleToString(double number) {
   var numberToString = number.toString();
 
-  // controls the length of the string
-  if (numberToString.length >= NumberString.maxInputDigit) {
-    numberToString = number.toStringAsPrecision(NumberString.maxInputDigit);
-  }
-
   // removes the ".0" part of the string
   final splitedNumber = numberToString.split(".");
   if (splitedNumber.length == 2 && splitedNumber[1] == "0") {
     numberToString = splitedNumber[0];
   }
 
-  // debugConsole(["normal", numberToString]);
+  // controls the length of the string
+  if (numberToString.length >= NumberString.maxInputDigit) {
+    if (splitedNumber[0].length >= NumberString.maxInputDigit || splitedNumber[1].length >= NumberString.maxInputDigit) {
+      numberToString = number.toStringAsExponential(NumberString.maxInputDigit - 7);
+    } else if (!numberToString.contains("e")) {
+      numberToString = numberToString.substring(0, NumberString.maxInputDigit - 1);
+    } else {
+      numberToString = numberToString.substring(0, NumberString.maxInputDigit - 7) + numberToString.substring(numberToString.indexOf("e"));
+    }
+  }
+
+  debugConsole([number.toString(), numberToString]);
+
   return numberToString;
 }
 

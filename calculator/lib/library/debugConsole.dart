@@ -30,8 +30,10 @@ void debugConsole(dynamic debugParams) {
   log(simpleTrace);
   if (_doCount) {
     _counter++;
+    log("($_counter)  =>  " + outputString);
+  } else {
+    log("    =>  " + outputString);
   }
-  log("($_counter)  =>  " + outputString);
 }
 
 /// do the // debugConsole() without trace.
@@ -53,7 +55,7 @@ void debugConsoleNoTrace(dynamic debugParams) {
   log(outputString);
 }
 
-/// call this function to stop print the debugging permanently
+/// call this function to start print the debugging permanently
 void enableDebug() {
   _debugOff = false;
 }
